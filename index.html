@@ -154,120 +154,9 @@
       </div>
 
       <!-- Rows rendered by app.js from /standings -->
-      <div id="rows-mount" data-empty="loading"></div>
-
-      <!-- Static skeleton rows shown only until first fetch lands -->
-      <div id="rows-skeleton">
-      <!-- Row 1 -->
-      <div class="row row-grid r1 perfect" role="row">
-        <span class="rank"><span class="marker" aria-hidden="true">◆</span>01</span>
-        <span class="op">Ada Lovelace<span class="handle">@ada-l</span></span>
-        <span class="dept">Platform Engineering</span>
-        <span class="meta-line">
-          <span class="score" aria-label="score: 100 out of 100"><span class="val">100</span><span class="suf">/100</span></span>
-          <span class="time"><span>14:31</span><span class="rel">· 1m ago</span></span>
-        </span>
+      <div id="rows-mount" data-empty="loading">
+        <div class="show-all" style="opacity:.6">loading standings…</div>
       </div>
-
-      <!-- Row 2 -->
-      <div class="row row-grid r2" role="row">
-        <span class="rank"><span class="marker" aria-hidden="true">◇</span>02</span>
-        <span class="op">Grace Hopper<span class="handle">@hopper</span></span>
-        <span class="dept">Avionics</span>
-        <span class="meta-line">
-          <span class="score" aria-label="score: 94 out of 100"><span class="val">94</span><span class="suf">/100</span></span>
-          <span class="time"><span>14:29</span><span class="rel">· 3m ago</span></span>
-        </span>
-      </div>
-
-      <!-- Row 3 -->
-      <div class="row row-grid r3" role="row">
-        <span class="rank"><span class="marker" aria-hidden="true">▫</span>03</span>
-        <span class="op">Katherine Johnson<span class="handle">@kjohnson</span></span>
-        <span class="dept">Flight Dynamics</span>
-        <span class="meta-line">
-          <span class="score" aria-label="score: 91 out of 100"><span class="val">91</span><span class="suf">/100</span></span>
-          <span class="time"><span>14:27</span><span class="rel">· 5m ago</span></span>
-        </span>
-      </div>
-
-      <!-- Row 4 -->
-      <div class="row row-grid" role="row">
-        <span class="rank">04</span>
-        <span class="op">Margaret Hamilton<span class="handle">@mhamilton</span></span>
-        <span class="dept">Software Reliability</span>
-        <span class="meta-line">
-          <span class="score"><span class="val">87</span><span class="suf">/100</span></span>
-          <span class="time"><span>14:24</span><span class="rel">· 8m ago</span></span>
-        </span>
-      </div>
-
-      <!-- Row 5 -->
-      <div class="row row-grid" role="row">
-        <span class="rank">05</span>
-        <span class="op">Alan Turing<span class="handle">@aturing</span></span>
-        <span class="dept">Cryptanalysis</span>
-        <span class="meta-line">
-          <span class="score"><span class="val">82</span><span class="suf">/100</span></span>
-          <span class="time"><span>14:21</span><span class="rel">· 11m ago</span></span>
-        </span>
-      </div>
-
-      <!-- Row 6 -->
-      <div class="row row-grid" role="row">
-        <span class="rank">06</span>
-        <span class="op">Hedy Lamarr<span class="handle">@hlamarr</span></span>
-        <span class="dept">Signals</span>
-        <span class="meta-line">
-          <span class="score"><span class="val">78</span><span class="suf">/100</span></span>
-          <span class="time"><span>14:18</span><span class="rel">· 14m ago</span></span>
-        </span>
-      </div>
-
-      <!-- Row 7 -->
-      <div class="row row-grid" role="row">
-        <span class="rank">07</span>
-        <span class="op">Claude Shannon<span class="handle">@cshannon</span></span>
-        <span class="dept">Information Theory</span>
-        <span class="meta-line">
-          <span class="score"><span class="val">71</span><span class="suf">/100</span></span>
-          <span class="time"><span>14:14</span><span class="rel">· 18m ago</span></span>
-        </span>
-      </div>
-
-      <!-- Row 8 -->
-      <div class="row row-grid" role="row">
-        <span class="rank">08</span>
-        <span class="op">Donald Knuth<span class="handle">@dknuth</span></span>
-        <span class="dept">Algorithms</span>
-        <span class="meta-line">
-          <span class="score"><span class="val">63</span><span class="suf">/100</span></span>
-          <span class="time"><span>14:09</span><span class="rel">· 23m ago</span></span>
-        </span>
-      </div>
-
-      <!-- Row 9 -->
-      <div class="row row-grid" role="row">
-        <span class="rank">09</span>
-        <span class="op">Edsger Dijkstra<span class="handle">@dijkstra</span></span>
-        <span class="dept">Verification</span>
-        <span class="meta-line">
-          <span class="score"><span class="val">58</span><span class="suf">/100</span></span>
-          <span class="time"><span>14:02</span><span class="rel">· 30m ago</span></span>
-        </span>
-      </div>
-
-      <!-- Row 10 -->
-      <div class="row row-grid" role="row">
-        <span class="rank">10</span>
-        <span class="op">Barbara Liskov<span class="handle">@bliskov</span></span>
-        <span class="dept">Systems</span>
-        <span class="meta-line">
-          <span class="score"><span class="val">41</span><span class="suf">/100</span></span>
-          <span class="time"><span>13:51</span><span class="rel">· 41m ago</span></span>
-        </span>
-      </div>
-      </div><!-- /#rows-skeleton -->
     </section>
 
     <!-- ===== How to submit ===== -->
@@ -341,9 +230,8 @@
 
   <!-- ===== Backend integration ===== -->
   <script>
-    // Paste your Cloudflare Tunnel URL here once it's running.
-    // Local dev: "http://localhost:8787". Production: "https://<random>.trycloudflare.com".
-    const BACKEND_URL = "http://localhost:8787";
+    // Cloudflare Worker — see worker/README.md for redeploy steps.
+    const BACKEND_URL = "https://drone-watchdog.asaff19899.workers.dev";
     const POLL_MS = 5000;
 
     const $ = (sel) => document.querySelector(sel);
@@ -390,25 +278,20 @@
         </div>`;
     }
 
-    let firstFetchDone = false;
     async function fetchStandings() {
+      const mount = $("#rows-mount");
       try {
         const res = await fetch(`${BACKEND_URL}/standings`, { cache: "no-store" });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const { count, rows } = await res.json();
-        const mount = $("#rows-mount");
-        const skel  = $("#rows-skeleton");
-        mount.innerHTML = rows.length ? rows.map(renderRow).join("") : "";
-        if (!firstFetchDone) { skel.style.display = "none"; firstFetchDone = true; }
+        mount.innerHTML = rows.length
+          ? rows.map(renderRow).join("")
+          : `<div class="show-all" style="opacity:.6">no entries yet — be the first to drop a run</div>`;
         const label = count === 1 ? "1 submission" : `${count} submissions`;
         $("#standings-count").textContent = label;
-        if (rows.length === 0) {
-          mount.innerHTML = `<div class="show-all" style="opacity:.6">no entries yet — be the first to drop a run</div>`;
-        }
       } catch (e) {
-        if (!firstFetchDone) {
-          $("#standings-count").textContent = "offline — backend unreachable";
-        }
+        mount.innerHTML = `<div class="show-all" style="opacity:.6">backend unreachable — try again in a moment</div>`;
+        $("#standings-count").textContent = "offline";
         console.warn("[standings] fetch failed:", e.message);
       }
     }

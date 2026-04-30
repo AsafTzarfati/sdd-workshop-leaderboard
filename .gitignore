@@ -1,3 +1,5 @@
 server/submissions.json
 server/node_modules/
+worker/node_modules/
+worker/.wrangler/
 .DS_Store

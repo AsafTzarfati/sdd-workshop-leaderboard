@@ -1,0 +1,13 @@
+name = "drone-watchdog"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+# Allowed origin for CORS. Tighten this to your GitHub Pages origin once it works.
+[vars]
+ALLOWED_ORIGIN = "https://asaftzarfati.github.io"
+
+# KV namespace binding. After running `wrangler kv namespace create LEADERBOARD`,
+# paste the printed `id = "..."` value below.
+[[kv_namespaces]]
+binding = "LEADERBOARD"
+id = "d762e1886cf949c18375830dc35f825e"
