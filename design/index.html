@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Drone Watchdog — Workshop Leaderboard</title>
+  <meta name="description" content="Live standings for the Drone Watchdog workshop. Hunt the patterns hiding in drone telemetry — drop your answer.json here to take a slot." />
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- React + Babel only for the Tweaks panel; the page itself is static HTML. -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+
+<body data-bg="radar" data-density="comfortable" data-score="default" data-rank="marker" data-accent="cyan">
+
+  <!-- Corner ticks (desktop only) -->
+  <div class="tick tl"></div>
+  <div class="tick tr"></div>
+  <div class="tick bl"></div>
+  <div class="tick br"></div>
+
+  <main class="shell">
+
+    <!-- ===== Header ===== -->
+    <header class="header" data-screen-label="01 Header">
+      <div class="brand">
+        <span class="mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+            <!-- arms -->
+            <line x1="6" y1="6" x2="18" y2="18"/>
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <!-- body -->
+            <rect x="10" y="10" width="4" height="4" rx="0.5"/>
+            <!-- rotors -->
+            <circle cx="6" cy="6" r="2.5"/>
+            <circle cx="18" cy="6" r="2.5"/>
+            <circle cx="6" cy="18" r="2.5"/>
+            <circle cx="18" cy="18" r="2.5"/>
+          </svg>
+        </span>
+        <span>Drone Watchdog</span>
+      </div>
+      <div class="statuschip mono">agent telemetry · ws://sim · 10 Hz</div>
+    </header>
+
+    <section class="hero">
+      <div>
+        <div class="label" style="margin-bottom: 8px;">Agent vs. drone <span style="color:var(--accent)">//</span> Live standings</div>
+        <h1>Whose agent flies<br/>the cleanest mission?</h1>
+        <p>Drop your agent's <span class="mono">answer.json</span> below — we'll stage the run, replay the flight, and post the score before you push to GitHub.</p>
+      </div>
+      <div class="hero-aside">
+        <svg class="flightpath" viewBox="0 0 220 120" aria-hidden="true">
+          <defs>
+            <pattern id="hp-grid" width="22" height="22" patternUnits="userSpaceOnUse">
+              <path d="M22 0H0V22" fill="none" stroke="var(--rule-soft)" stroke-width="1"/>
+            </pattern>
+            <linearGradient id="hp-stroke" x1="0" y1="1" x2="1" y2="0">
+              <stop offset="0%"   stop-color="#4FE2FF"/>
+              <stop offset="55%"  stop-color="#FF4FD8"/>
+              <stop offset="100%" stop-color="#FFB347"/>
+            </linearGradient>
+          </defs>
+          <rect width="220" height="120" fill="url(#hp-grid)"/>
+          <!-- waypoints -->
+          <g stroke="var(--ink-3)" fill="var(--paper)" stroke-width="1">
+            <circle cx="18"  cy="96" r="3"/>
+            <circle cx="70"  cy="60" r="3"/>
+            <circle cx="130" cy="82" r="3"/>
+            <circle cx="188" cy="34" r="3"/>
+          </g>
+          <!-- planned path -->
+          <path d="M18 96 L70 60 L130 82 L188 34" fill="none" stroke="var(--ink-3)" stroke-width="1" stroke-dasharray="3 4"/>
+          <!-- actual flown — holographic gradient stroke, draws on load -->
+          <path class="path-actual" d="M18 96 Q 44 70 70 60 T 130 82 Q 158 70 188 34" fill="none" stroke="url(#hp-stroke)" stroke-width="2" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" stroke-linecap="round"/>
+          <!-- drone marker at current pos -->
+          <g class="drone-marker" transform="translate(188 34)" stroke="var(--accent)" fill="var(--paper)" stroke-width="1.4">
+            <circle class="ping" cx="0" cy="0" r="7" fill="none" stroke="var(--accent)" stroke-width="1" opacity="0"/>
+            <line x1="-5" y1="-5" x2="5" y2="5"/>
+            <line x1="5"  y1="-5" x2="-5" y2="5"/>
+            <circle cx="-5" cy="-5" r="2"/>
+            <circle cx="5"  cy="-5" r="2"/>
+            <circle cx="-5" cy="5"  r="2"/>
+            <circle cx="5"  cy="5"  r="2"/>
+          </g>
+          <!-- coordinate labels -->
+          <g font-family="ui-monospace, monospace" font-size="8" fill="var(--ink-3)">
+            <text x="4" y="110">WP-00</text>
+            <text x="152" y="22">WP-03 · alt 42m</text>
+          </g>
+        </svg>
+        <button class="refresh" type="button" aria-label="Refresh standings now">
+          <span class="dot"></span>
+          <span>updated 14:32&nbsp;·&nbsp;refresh in 27s</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ===== Upload zone (idle) ===== -->
+    <section class="upload" aria-label="Submit answer.json" data-screen-label="02 Upload zone">
+      <div class="glyph" aria-hidden="true">
+        <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <!-- top-down quadcopter -->
+          <line x1="7" y1="7" x2="21" y2="21"/>
+          <line x1="21" y1="7" x2="7" y2="21"/>
+          <rect x="12" y="12" width="4" height="4" rx="0.6"/>
+          <circle cx="7"  cy="7"  r="3"/>
+          <circle cx="21" cy="7"  r="3"/>
+          <circle cx="7"  cy="21" r="3"/>
+          <circle cx="21" cy="21" r="3"/>
+        </svg>
+      </div>
+      <div class="body">
+        <div class="head">Land <span class="file">answer.json</span> here</div>
+        <div class="sub">…or <button id="choose-file" class="btn ghost" type="button">choose file</button> <span id="file-name" class="meta" style="margin-left: 8px;"></span></div>
+        <input id="f-file" type="file" accept=".json,application/json" hidden />
+        <div class="meta">your agent's mission log · .json, max 64 KB</div>
+      </div>
+      <div class="fields">
+        <div class="field">
+          <label for="f-name">Operator name</label>
+          <input id="f-name" type="text" placeholder="e.g. Ada Lovelace" autocomplete="name" />
+          <span class="hint">how you'll appear on the leaderboard</span>
+        </div>
+        <div class="field">
+          <label for="f-dept">Department</label>
+          <input id="f-dept" type="text" placeholder="e.g. Platform Engineering" autocomplete="organization" />
+          <span class="hint">shown next to your name in standings</span>
+        </div>
+      </div>
+      <div class="actions">
+        <div class="meta"><span id="submit-status">we stage the run, then route you to GitHub to finalise</span></div>
+        <button id="stage-btn" class="btn stage" type="button">Stage run <span class="arr">→</span></button>
+      </div>
+    </section>
+
+    <!-- ===== Standings ===== -->
+    <section class="board" aria-labelledby="standings-label" data-screen-label="03 Standings">
+      <div class="section-rule">
+        <span id="standings-label" class="label">Standings</span>
+        <span class="line"></span>
+        <span id="standings-count" class="count">— submissions</span>
+      </div>
+
+      <!-- Header row -->
+      <div class="row-grid thead" role="row">
+        <span class="col">Rank</span>
+        <span class="col">Name</span>
+        <span class="col">Department</span>
+        <span class="col">Score</span>
+        <span class="col">Submitted</span>
+      </div>
+
+      <!-- Rows rendered by app.js from /standings -->
+      <div id="rows-mount" data-empty="loading"></div>
+
+      <!-- Static skeleton rows shown only until first fetch lands -->
+      <div id="rows-skeleton">
+      <!-- Row 1 -->
+      <div class="row row-grid r1 perfect" role="row">
+        <span class="rank"><span class="marker" aria-hidden="true">◆</span>01</span>
+        <span class="op">Ada Lovelace<span class="handle">@ada-l</span></span>
+        <span class="dept">Platform Engineering</span>
+        <span class="meta-line">
+          <span class="score" aria-label="score: 100 out of 100"><span class="val">100</span><span class="suf">/100</span></span>
+          <span class="time"><span>14:31</span><span class="rel">· 1m ago</span></span>
+        </span>
+      </div>
+
+      <!-- Row 2 -->
+      <div class="row row-grid r2" role="row">
+        <span class="rank"><span class="marker" aria-hidden="true">◇</span>02</span>
+        <span class="op">Grace Hopper<span class="handle">@hopper</span></span>
+        <span class="dept">Avionics</span>
+        <span class="meta-line">
+          <span class="score" aria-label="score: 94 out of 100"><span class="val">94</span><span class="suf">/100</span></span>
+          <span class="time"><span>14:29</span><span class="rel">· 3m ago</span></span>
+        </span>
+      </div>
+
+      <!-- Row 3 -->
+      <div class="row row-grid r3" role="row">
+        <span class="rank"><span class="marker" aria-hidden="true">▫</span>03</span>
+        <span class="op">Katherine Johnson<span class="handle">@kjohnson</span></span>
+        <span class="dept">Flight Dynamics</span>
+        <span class="meta-line">
+          <span class="score" aria-label="score: 91 out of 100"><span class="val">91</span><span class="suf">/100</span></span>
+          <span class="time"><span>14:27</span><span class="rel">· 5m ago</span></span>
+        </span>
+      </div>
+
+      <!-- Row 4 -->
+      <div class="row row-grid" role="row">
+        <span class="rank">04</span>
+        <span class="op">Margaret Hamilton<span class="handle">@mhamilton</span></span>
+        <span class="dept">Software Reliability</span>
+        <span class="meta-line">
+          <span class="score"><span class="val">87</span><span class="suf">/100</span></span>
+          <span class="time"><span>14:24</span><span class="rel">· 8m ago</span></span>
+        </span>
+      </div>
+
+      <!-- Row 5 -->
+      <div class="row row-grid" role="row">
+        <span class="rank">05</span>
+        <span class="op">Alan Turing<span class="handle">@aturing</span></span>
+        <span class="dept">Cryptanalysis</span>
+        <span class="meta-line">
+          <span class="score"><span class="val">82</span><span class="suf">/100</span></span>
+          <span class="time"><span>14:21</span><span class="rel">· 11m ago</span></span>
+        </span>
+      </div>
+
+      <!-- Row 6 -->
+      <div class="row row-grid" role="row">
+        <span class="rank">06</span>
+        <span class="op">Hedy Lamarr<span class="handle">@hlamarr</span></span>
+        <span class="dept">Signals</span>
+        <span class="meta-line">
+          <span class="score"><span class="val">78</span><span class="suf">/100</span></span>
+          <span class="time"><span>14:18</span><span class="rel">· 14m ago</span></span>
+        </span>
+      </div>
+
+      <!-- Row 7 -->
+      <div class="row row-grid" role="row">
+        <span class="rank">07</span>
+        <span class="op">Claude Shannon<span class="handle">@cshannon</span></span>
+        <span class="dept">Information Theory</span>
+        <span class="meta-line">
+          <span class="score"><span class="val">71</span><span class="suf">/100</span></span>
+          <span class="time"><span>14:14</span><span class="rel">· 18m ago</span></span>
+        </span>
+      </div>
+
+      <!-- Row 8 -->
+      <div class="row row-grid" role="row">
+        <span class="rank">08</span>
+        <span class="op">Donald Knuth<span class="handle">@dknuth</span></span>
+        <span class="dept">Algorithms</span>
+        <span class="meta-line">
+          <span class="score"><span class="val">63</span><span class="suf">/100</span></span>
+          <span class="time"><span>14:09</span><span class="rel">· 23m ago</span></span>
+        </span>
+      </div>
+
+      <!-- Row 9 -->
+      <div class="row row-grid" role="row">
+        <span class="rank">09</span>
+        <span class="op">Edsger Dijkstra<span class="handle">@dijkstra</span></span>
+        <span class="dept">Verification</span>
+        <span class="meta-line">
+          <span class="score"><span class="val">58</span><span class="suf">/100</span></span>
+          <span class="time"><span>14:02</span><span class="rel">· 30m ago</span></span>
+        </span>
+      </div>
+
+      <!-- Row 10 -->
+      <div class="row row-grid" role="row">
+        <span class="rank">10</span>
+        <span class="op">Barbara Liskov<span class="handle">@bliskov</span></span>
+        <span class="dept">Systems</span>
+        <span class="meta-line">
+          <span class="score"><span class="val">41</span><span class="suf">/100</span></span>
+          <span class="time"><span>13:51</span><span class="rel">· 41m ago</span></span>
+        </span>
+      </div>
+      </div><!-- /#rows-skeleton -->
+    </section>
+
+    <!-- ===== How to submit ===== -->
+    <section class="howto" aria-labelledby="howto-label" data-screen-label="04 How to submit">
+      <div class="section-rule">
+        <span id="howto-label" class="label">How to submit</span>
+        <span class="line"></span>
+        <span class="count">3 steps</span>
+      </div>
+      <ol class="howto-list">
+        <li>
+          <span class="num">01.</span>
+          <span class="verb">Run</span>
+          <span class="body">the sim against your watchdog <span class="arrow">→</span> produces <span class="mono">answer.json</span></span>
+        </li>
+        <li>
+          <span class="num">02.</span>
+          <span class="verb">Drop</span>
+          <span class="body"><span class="mono">answer.json</span> onto the zone above <span class="arrow">→</span> we stage your run</span>
+        </li>
+        <li>
+          <span class="num">03.</span>
+          <span class="verb">Click</span>
+          <span class="body">Submit on the GitHub tab we open <span class="arrow">→</span> finalises your entry</span>
+        </li>
+      </ol>
+    </section>
+
+    <!-- ===== Telemetry ticker ===== -->
+    <section class="telemetry" aria-label="Live telemetry stream" data-screen-label="04 Telemetry">
+      <div class="track" aria-hidden="true">
+        <span><span class="live">●</span> LIVE</span>
+        <span><span class="k">ALT</span> <span class="v">42.7m</span></span>
+        <span><span class="k">HDG</span> <span class="v">287°</span></span>
+        <span><span class="k">RPM</span> <span class="v">8420</span></span>
+        <span><span class="k">BAT</span> <span class="v">73%</span></span>
+        <span><span class="k">GPS</span> <span class="v">37.4219N · 122.0840W</span></span>
+        <span><span class="k">SAT</span> <span class="v">11/12</span></span>
+        <span><span class="k">SIG</span> <span class="v">−42 dBm</span></span>
+        <span><span class="k">WIND</span> <span class="v">4.2 m/s NW</span></span>
+        <span><span class="k">VEL</span> <span class="v">6.8 m/s</span></span>
+        <span><span class="k">PITCH</span> <span class="v">+2.1°</span></span>
+        <span><span class="k">ROLL</span> <span class="v">−0.4°</span></span>
+        <span><span class="k">YAW</span> <span class="v">287.3°</span></span>
+        <span><span class="k">MISSION</span> <span class="v">WP-03 / 04</span></span>
+        <span><span class="k">AGENT</span> <span class="v">claude-haiku-4.5</span></span>
+        <span><span class="k">UPTIME</span> <span class="v">00:14:32</span></span>
+        <span><span class="live">●</span> LIVE</span>
+        <span><span class="k">ALT</span> <span class="v">42.7m</span></span>
+        <span><span class="k">HDG</span> <span class="v">287°</span></span>
+        <span><span class="k">RPM</span> <span class="v">8420</span></span>
+        <span><span class="k">BAT</span> <span class="v">73%</span></span>
+        <span><span class="k">GPS</span> <span class="v">37.4219N · 122.0840W</span></span>
+        <span><span class="k">SAT</span> <span class="v">11/12</span></span>
+        <span><span class="k">SIG</span> <span class="v">−42 dBm</span></span>
+      </div>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer class="footer" data-screen-label="05 Footer">
+      <a href="#" rel="noopener">sim repo ↗</a>
+      <span class="sep">·</span>
+      <a href="#" rel="noopener">workshop notes ↗</a>
+      <span class="sep">·</span>
+      <span>v0.4.1</span>
+      <span class="sep">·</span>
+      <span>updated 14:32:07</span>
+    </footer>
+
+  </main>
+
+  <!-- ===== Backend integration ===== -->
+  <script>
+    // Paste your Cloudflare Tunnel URL here once it's running.
+    // Local dev: "http://localhost:8787". Production: "https://<random>.trycloudflare.com".
+    const BACKEND_URL = "http://localhost:8787";
+    const POLL_MS = 5000;
+
+    const $ = (sel) => document.querySelector(sel);
+    const escape = (s) => String(s).replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    }[c]));
+
+    function relTime(iso) {
+      const ms = Date.now() - new Date(iso).getTime();
+      const m = Math.max(0, Math.round(ms / 60000));
+      if (m < 1) return "just now";
+      if (m < 60) return `${m}m ago`;
+      const h = Math.round(m / 60);
+      return `${h}h ago`;
+    }
+    function clockTime(iso) {
+      const d = new Date(iso);
+      return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+    }
+    function rankMarker(rank) {
+      return rank === 1 ? "◆" : rank === 2 ? "◇" : rank === 3 ? "▫" : "";
+    }
+    function handleFromName(name) {
+      return "@" + name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 16);
+    }
+
+    function renderRow(r) {
+      const tier = r.rank <= 3 ? `r${r.rank}` : "";
+      const perfect = r.score >= 100 ? "perfect" : "";
+      const marker = rankMarker(r.rank);
+      const markerHTML = marker
+        ? `<span class="marker" aria-hidden="true">${marker}</span>`
+        : "";
+      const rankNum = String(r.rank).padStart(2, "0");
+      return `
+        <div class="row row-grid ${tier} ${perfect}" role="row">
+          <span class="rank">${markerHTML}${rankNum}</span>
+          <span class="op">${escape(r.name)}<span class="handle">${escape(handleFromName(r.name))}</span></span>
+          <span class="dept">${escape(r.department)}</span>
+          <span class="meta-line">
+            <span class="score" aria-label="score: ${r.score} out of 100"><span class="val">${r.score}</span><span class="suf">/100</span></span>
+            <span class="time"><span>${clockTime(r.submitted_at)}</span><span class="rel">· ${relTime(r.submitted_at)}</span></span>
+          </span>
+        </div>`;
+    }
+
+    let firstFetchDone = false;
+    async function fetchStandings() {
+      try {
+        const res = await fetch(`${BACKEND_URL}/standings`, { cache: "no-store" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const { count, rows } = await res.json();
+        const mount = $("#rows-mount");
+        const skel  = $("#rows-skeleton");
+        mount.innerHTML = rows.length ? rows.map(renderRow).join("") : "";
+        if (!firstFetchDone) { skel.style.display = "none"; firstFetchDone = true; }
+        const label = count === 1 ? "1 submission" : `${count} submissions`;
+        $("#standings-count").textContent = label;
+        if (rows.length === 0) {
+          mount.innerHTML = `<div class="show-all" style="opacity:.6">no entries yet — be the first to drop a run</div>`;
+        }
+      } catch (e) {
+        if (!firstFetchDone) {
+          $("#standings-count").textContent = "offline — backend unreachable";
+        }
+        console.warn("[standings] fetch failed:", e.message);
+      }
+    }
+
+    // ── Upload wiring ─────────────────────────────────────────────────
+    const fileInput = $("#f-file");
+    $("#choose-file").addEventListener("click", () => fileInput.click());
+    fileInput.addEventListener("change", () => {
+      const f = fileInput.files?.[0];
+      $("#file-name").textContent = f ? `· ${f.name}` : "";
+    });
+
+    function setStatus(msg, kind) {
+      const el = $("#submit-status");
+      el.textContent = msg;
+      el.style.color = kind === "err" ? "var(--alert)" : kind === "ok" ? "var(--success)" : "";
+    }
+
+    $("#stage-btn").addEventListener("click", async () => {
+      const name = $("#f-name").value.trim();
+      const dept = $("#f-dept").value.trim();
+      const file = fileInput.files?.[0];
+
+      if (!name) return setStatus("name required", "err");
+      if (!dept) return setStatus("department required", "err");
+      if (!file) return setStatus("pick an answer.json file", "err");
+      if (file.size > 64 * 1024) return setStatus("file too large (max 64 KB)", "err");
+
+      setStatus("staging…");
+      const btn = $("#stage-btn");
+      btn.disabled = true;
+
+      let answer;
+      try { answer = JSON.parse(await file.text()); }
+      catch { btn.disabled = false; return setStatus("answer.json isn't valid JSON", "err"); }
+
+      try {
+        const res = await fetch(`${BACKEND_URL}/submit`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, department: dept, answer }),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          setStatus(body.error || `submit failed (HTTP ${res.status})`, "err");
+        } else {
+          setStatus(`staged ✓ — score ${body.score}/100`, "ok");
+          $("#f-name").value = "";
+          $("#f-dept").value = "";
+          fileInput.value = "";
+          $("#file-name").textContent = "";
+          fetchStandings();
+        }
+      } catch (e) {
+        setStatus(`network error — is the backend running?`, "err");
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    // Initial load + poll
+    fetchStandings();
+    setInterval(fetchStandings, POLL_MS);
+  </script>
+
+  <!-- Tweaks panel mount + protocol -->
+  <div id="tweaks-root"></div>
+  <script type="text/babel" data-presets="react">
+    // ── Tweaks panel styles ─────────────────────────────────────────────
+    const __TWEAKS_STYLE = `
+      .twk-panel{position:fixed;right:16px;bottom:16px;z-index:2147483646;width:280px;
+        max-height:calc(100vh - 32px);display:flex;flex-direction:column;
+        background:rgba(250,249,247,.92);color:#29261b;
+        -webkit-backdrop-filter:blur(24px) saturate(160%);backdrop-filter:blur(24px) saturate(160%);
+        border:.5px solid rgba(0,0,0,.12);border-radius:14px;
+        box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 12px 40px rgba(0,0,0,.18);
+        font:11.5px/1.4 ui-sans-serif,system-ui,-apple-system,sans-serif;overflow:hidden}
+      .twk-hd{display:flex;align-items:center;justify-content:space-between;
+        padding:10px 8px 10px 14px;cursor:move;user-select:none}
+      .twk-hd b{font-size:12px;font-weight:600;letter-spacing:.01em}
+      .twk-x{appearance:none;border:0;background:transparent;color:rgba(41,38,27,.55);
+        width:22px;height:22px;border-radius:6px;cursor:default;font-size:13px;line-height:1}
+      .twk-x:hover{background:rgba(0,0,0,.06);color:#29261b}
+      .twk-body{padding:2px 14px 14px;display:flex;flex-direction:column;gap:10px;
+        overflow-y:auto;overflow-x:hidden;min-height:0}
+      .twk-row{display:flex;flex-direction:column;gap:5px}
+      .twk-row-h{flex-direction:row;align-items:center;justify-content:space-between;gap:10px}
+      .twk-lbl{display:flex;justify-content:space-between;align-items:baseline;
+        color:rgba(41,38,27,.72)}
+      .twk-lbl>span:first-child{font-weight:500}
+      .twk-sect{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+        color:rgba(41,38,27,.45);padding:10px 0 0}
+      .twk-sect:first-child{padding-top:0}
+      .twk-seg{position:relative;display:flex;padding:2px;border-radius:8px;
+        background:rgba(0,0,0,.06);user-select:none}
+      .twk-seg-thumb{position:absolute;top:2px;bottom:2px;border-radius:6px;
+        background:rgba(255,255,255,.95);box-shadow:0 1px 2px rgba(0,0,0,.12);
+        transition:left .15s cubic-bezier(.3,.7,.4,1),width .15s}
+      .twk-seg button{appearance:none;position:relative;z-index:1;flex:1;border:0;
+        background:transparent;color:inherit;font:inherit;font-weight:500;min-height:22px;
+        border-radius:6px;cursor:default;padding:4px 6px;line-height:1.2;overflow-wrap:anywhere}
+    `;
+
+    function useTweaks(defaults) {
+      const [values, setValues] = React.useState(defaults);
+      const setTweak = React.useCallback((keyOrEdits, val) => {
+        const edits = typeof keyOrEdits === 'object' && keyOrEdits !== null
+          ? keyOrEdits : { [keyOrEdits]: val };
+        setValues((prev) => ({ ...prev, ...edits }));
+        try { window.parent.postMessage({ type: '__edit_mode_set_keys', edits }, '*'); } catch (e) {}
+      }, []);
+      return [values, setTweak];
+    }
+
+    function TweaksPanel({ title = 'Tweaks', children }) {
+      const [open, setOpen] = React.useState(false);
+      React.useEffect(() => {
+        const onMsg = (e) => {
+          const t = e?.data?.type;
+          if (t === '__activate_edit_mode') setOpen(true);
+          else if (t === '__deactivate_edit_mode') setOpen(false);
+        };
+        window.addEventListener('message', onMsg);
+        try { window.parent.postMessage({ type: '__edit_mode_available' }, '*'); } catch(e) {}
+        return () => window.removeEventListener('message', onMsg);
+      }, []);
+      const dismiss = () => {
+        setOpen(false);
+        try { window.parent.postMessage({ type: '__edit_mode_dismissed' }, '*'); } catch(e) {}
+      };
+      if (!open) return null;
+      return (
+        <>
+          <style>{__TWEAKS_STYLE}</style>
+          <div className="twk-panel" data-noncommentable="">
+            <div className="twk-hd">
+              <b>{title}</b>
+              <button className="twk-x" aria-label="Close tweaks" onClick={dismiss}>✕</button>
+            </div>
+            <div className="twk-body">{children}</div>
+          </div>
+        </>
+      );
+    }
+
+    function TweakSection({ title, children }) {
+      return <>
+        <div className="twk-sect">{title}</div>
+        {children}
+      </>;
+    }
+
+    function TweakRadio({ value, options, onChange }) {
+      const opts = options.map(o => typeof o === 'object' ? o : { value: o, label: o });
+      const idx = Math.max(0, opts.findIndex(o => o.value === value));
+      const n = opts.length;
+      return (
+        <div className="twk-seg" role="radiogroup">
+          <div className="twk-seg-thumb" style={{
+            left: `calc(2px + ${idx} * (100% - 4px) / ${n})`,
+            width: `calc((100% - 4px) / ${n})`
+          }} />
+          {opts.map(o => (
+            <button key={o.value} type="button" role="radio"
+              aria-checked={o.value === value}
+              onClick={() => onChange(o.value)}>{o.label}</button>
+          ))}
+        </div>
+      );
+    }
+
+    // ── App: leaderboard tweaks ────────────────────────────────────────
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "accent":     "cyan",
+      "density":    "comfortable",
+      "score":      "default",
+      "rank":       "marker",
+      "background": "radar"
+    }/*EDITMODE-END*/;
+
+    function LeaderboardTweaks() {
+      const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
+
+      React.useEffect(() => {
+        const b = document.body;
+        b.dataset.bg      = tweaks.background;
+        b.dataset.density = tweaks.density;
+        b.dataset.score   = tweaks.score;
+        b.dataset.rank    = tweaks.rank;
+        b.dataset.accent  = tweaks.accent;
+        const accentMap     = { amber: "#FFB347", green: "#4FD18B", paper: "#E8ECF5", cyan: "#4FE2FF", magenta: "#FF4FD8" };
+        const accentSoftMap = { amber: "#FFB34722", green: "#4FD18B22", paper: "#E8ECF514", cyan: "#4FE2FF22", magenta: "#FF4FD822" };
+        document.documentElement.style.setProperty("--accent",      accentMap[tweaks.accent]);
+        document.documentElement.style.setProperty("--accent-soft", accentSoftMap[tweaks.accent]);
+      }, [tweaks]);
+
+      return (
+        <TweaksPanel title="Tweaks">
+          <TweakSection title="Accent">
+            <TweakRadio value={tweaks.accent} onChange={v => setTweak("accent", v)}
+              options={[{value:"cyan",label:"Cyan"},{value:"magenta",label:"Magenta"},{value:"amber",label:"Beacon"},{value:"green",label:"CRT green"},{value:"paper",label:"Starlight"}]} />
+          </TweakSection>
+          <TweakSection title="Density">
+            <TweakRadio value={tweaks.density} onChange={v => setTweak("density", v)}
+              options={[{value:"comfortable",label:"Comfortable"},{value:"compact",label:"Compact"}]} />
+          </TweakSection>
+          <TweakSection title="Score format">
+            <TweakRadio value={tweaks.score} onChange={v => setTweak("score", v)}
+              options={[{value:"default",label:"87 /100"},{value:"number",label:"87"},{value:"bracket",label:"[87/100]"}]} />
+          </TweakSection>
+          <TweakSection title="Rank style">
+            <TweakRadio value={tweaks.rank} onChange={v => setTweak("rank", v)}
+              options={[{value:"marker",label:"Marker + #"},{value:"num",label:"Number only"}]} />
+          </TweakSection>
+          <TweakSection title="Background">
+            <TweakRadio value={tweaks.background} onChange={v => setTweak("background", v)}
+              options={[{value:"radar",label:"Radar"},{value:"grid",label:"Grid"},{value:"dotted",label:"Dotted"},{value:"plain",label:"Plain"}]} />
+          </TweakSection>
+        </TweaksPanel>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("tweaks-root")).render(<LeaderboardTweaks />);
+  </script>
+</body>
+</html>
+</content>
+</invoke>
