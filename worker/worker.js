@@ -7,6 +7,7 @@
 import { score } from "./score.js";
 
 const KEY = "submissions";
+const CACHE_KEY = "judge_cache";
 const MAX_FIELD_LEN = 80;
 const MAX_ANSWER_BYTES = 64 * 1024;
 const RATE_WINDOW_MS = 5_000;
@@ -98,8 +99,11 @@ export default {
       const err = validate(payload);
       if (err) return json({ error: err }, 400, env);
 
+      const cache = (await env.LEADERBOARD.get(CACHE_KEY, "json")) ?? {};
+      const cacheBefore = JSON.stringify(cache);
+
       let s;
-      try { s = score(payload.answer); }
+      try { s = await score(payload.answer, { cache, env }); }
       catch (e) { return json({ error: `scoring failed: ${e.message}` }, 400, env); }
       if (typeof s !== "number" || !Number.isFinite(s)) {
         return json({ error: "scoring returned a non-number" }, 500, env);
@@ -119,6 +123,11 @@ export default {
       const rows = (await env.LEADERBOARD.get(KEY, "json")) ?? [];
       rows.push(entry);
       await env.LEADERBOARD.put(KEY, JSON.stringify(rows));
+
+      // Only write the judge cache back if it actually grew (avoids a needless KV write per submit).
+      if (JSON.stringify(cache) !== cacheBefore) {
+        await env.LEADERBOARD.put(CACHE_KEY, JSON.stringify(cache));
+      }
 
       return json(entry, 201, env);
     }

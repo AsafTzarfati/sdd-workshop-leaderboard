@@ -1,0 +1,40 @@
+{
+  "name": "Dave",
+  "department": "Engineering",
+  "answer": {
+    "pattern_1": {
+      "label": "a chessboard",
+      "bbox_width_m": 500,
+      "bbox_height_m": 333,
+      "center_lat": 31.77,
+      "center_lon": 35.21,
+      "components": ["stripes", "hexagram"]
+    },
+    "pattern_2": {
+      "label": "Apollo 11 descent",
+      "peak_altitude_m": 142,
+      "manual_takeover_seq": 1100,
+      "alarm_event_seq": 600
+    },
+    "pattern_3": {
+      "label": "Fibonacci",
+      "interval_seconds": [1, 1, 2, 3, 5, 8, 13, 21],
+      "anomaly_seqs": [10, 20, 40, 70, 120, 200, 330, 540]
+    },
+    "pattern_4": {
+      "label": "lagged correlation",
+      "source_field": "current_a",
+      "target_field": "motor_temp_c[0]",
+      "lag_samples": 17,
+      "gain": 0.3
+    },
+    "pattern_5": {
+      "label": "ASCII in MAINT",
+      "decoded_message": "HELLO COPILOT",
+      "carrier_field": "motor_temp_c[3]",
+      "active_mode": "MAINT",
+      "window_samples": 10,
+      "period_s": 30
+    }
+  }
+}

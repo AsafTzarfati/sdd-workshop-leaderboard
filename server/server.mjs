@@ -26,24 +26,27 @@ const MAX_FIELD_LEN = 80;
 const RATE_WINDOW_MS = 5_000;
 
 // ── Storage (read-modify-write a single JSON file) ──────────────────────
+// Store shape: { submissions: [...], judge_cache: { ... } }.
+// Backwards-compat: if the on-disk file is a bare array (older format),
+// treat it as { submissions: [array], judge_cache: {} }.
 async function loadStore() {
-  if (!existsSync(STORE_PATH)) return [];
+  if (!existsSync(STORE_PATH)) return { submissions: [], judge_cache: {} };
   try {
     const txt = await readFile(STORE_PATH, "utf8");
     const parsed = JSON.parse(txt);
-    return Array.isArray(parsed) ? parsed : [];
+    if (Array.isArray(parsed)) return { submissions: parsed, judge_cache: {} };
+    return {
+      submissions: Array.isArray(parsed?.submissions) ? parsed.submissions : [],
+      judge_cache: parsed?.judge_cache && typeof parsed.judge_cache === "object" ? parsed.judge_cache : {},
+    };
   } catch (e) {
     console.error("[store] failed to read, starting empty:", e.message);
-    return [];
+    return { submissions: [], judge_cache: {} };
   }
 }
-async function saveStore(rows) {
+async function saveStore(store) {
   await mkdir(dirname(STORE_PATH), { recursive: true });
-  // Write to a temp then rename — atomic on POSIX.
-  const tmp = STORE_PATH + ".tmp";
-  await writeFile(tmp, JSON.stringify(rows, null, 2), "utf8");
-  await writeFile(STORE_PATH, JSON.stringify(rows, null, 2), "utf8");
-  // (rename omitted — extra writeFile is fine at this scale)
+  await writeFile(STORE_PATH, JSON.stringify(store, null, 2), "utf8");
 }
 
 // ── In-memory rate limit ────────────────────────────────────────────────
@@ -129,8 +132,8 @@ async function handle(req, res) {
   }
 
   if (req.method === "GET" && url.pathname === "/standings") {
-    const rows = await loadStore();
-    return send(res, 200, shapeStandings(rows));
+    const store = await loadStore();
+    return send(res, 200, shapeStandings(store.submissions));
   }
 
   if (req.method === "GET" && url.pathname === "/health") {
@@ -152,8 +155,10 @@ async function handle(req, res) {
     const err = validateSubmission(payload);
     if (err) return send(res, 400, { error: err });
 
+    const store = await loadStore();
+
     let s;
-    try { s = score(payload.answer); }
+    try { s = await score(payload.answer, { cache: store.judge_cache }); }
     catch (e) { return send(res, 400, { error: `scoring failed: ${e.message}` }); }
     if (typeof s !== "number" || !Number.isFinite(s)) {
       return send(res, 500, { error: "scoring returned a non-number" });
@@ -167,9 +172,8 @@ async function handle(req, res) {
       submitted_at: new Date().toISOString(),
     };
 
-    const rows = await loadStore();
-    rows.push(entry);
-    await saveStore(rows);
+    store.submissions.push(entry);
+    await saveStore(store);
 
     console.log(`[submit] ${entry.name} (${entry.department}) → ${entry.score}`);
     return send(res, 201, entry);

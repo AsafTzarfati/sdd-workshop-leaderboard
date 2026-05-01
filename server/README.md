@@ -36,11 +36,36 @@ caffeinate -dimsu
 | `PORT`           | `8787`                         |                                                |
 | `ALLOWED_ORIGIN` | `*`                            | set to your `https://<user>.github.io` in prod |
 | `STORE_PATH`     | `./server/submissions.json`    | the JSON file we append to                     |
+| `LLM_JUDGE_URL`  | _(unset)_                      | OpenAI-compatible `/chat/completions` endpoint for label-synonym judging. Without it, novel label phrasings cost up to ~4 pts per pattern (structural credit unaffected). |
+| `LLM_JUDGE_TOKEN`| _(unset)_                      | bearer token for the judge endpoint            |
+| `LLM_JUDGE_MODEL`| `gpt-4o-mini`                  | model id sent in the chat-completion request   |
 
 Example for the day:
 ```sh
 ALLOWED_ORIGIN="https://your-user.github.io" node server/server.mjs
 ```
+
+## LLM judge via GitHub Copilot (Sonnet 4.6)
+
+A small Python proxy in [scripts/judge_proxy.py](../scripts/judge_proxy.py) reuses
+[ssd-speckit-workshop/github_auth.py](../../ssd-speckit-workshop/github_auth.py)
+to talk to Copilot, then exposes a plain OpenAI-style endpoint that `judge.mjs`
+can hit unchanged.
+
+```sh
+# Terminal 1 — start the proxy (first run does the device-flow login)
+python3 scripts/judge_proxy.py
+# optional: see which model ids your plan exposes
+python3 scripts/judge_proxy.py --list-models
+
+# Terminal 2 — run the leaderboard with judge env wired up
+./scripts/with-judge.sh
+# (equivalent to setting LLM_JUDGE_URL/LLM_JUDGE_TOKEN/LLM_JUDGE_MODEL by hand)
+```
+
+The Cloudflare Worker can't run Python, so for the worker path use a different
+provider's bearer token directly (set `LLM_JUDGE_URL`/`LLM_JUDGE_TOKEN`/
+`LLM_JUDGE_MODEL` as Worker secrets).
 
 ## Storage
 
