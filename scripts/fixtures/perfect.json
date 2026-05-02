@@ -35,6 +35,7 @@
       "active_mode": "MAINT",
       "window_samples": 10,
       "period_s": 30
-    }
+    },
+    "telemetry_window_sha256": "0009f0eb0a5dfcee7a601837836b55b4cd64269eddfd896f358476f9a6059275"
   }
 }
