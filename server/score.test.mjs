@@ -5,7 +5,7 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { score } from "./score.mjs";
+import { score, scoreWithBreakdown } from "./score.mjs";
 
 const PERFECT = {
   pattern_1: {
@@ -78,7 +78,14 @@ test("range-criterion boundary: just inside passes, just outside fails", async (
 });
 
 test("cross-agent fairness: synonym labels score identically", async () => {
-  const variants = ["Israeli flag", "Star of David", "hexagram", "Magen David", "flag of israel"];
+  const variants = [
+    "Israeli flag",
+    "Star of David",
+    "hexagram",
+    "Magen David",
+    "flag of israel",
+    "the blue and white banner of the State of Israel",
+  ];
   const scores = await Promise.all(
     variants.map((label) => score({ pattern_1: { ...PERFECT.pattern_1, label } }))
   );
@@ -132,4 +139,29 @@ test("Pattern 5 message is normalized — extra whitespace and case ignored", as
     pattern_5: { ...PERFECT.pattern_5, decoded_message: "  hello   copilot  " },
   };
   assert.equal(await score(ans), 20);
+});
+
+test("scoreWithBreakdown returns total + per-pattern map", async () => {
+  const { total, breakdown } = await scoreWithBreakdown(PERFECT);
+  assert.equal(total, 100);
+  assert.deepEqual(breakdown, {
+    pattern_1: 20, pattern_2: 20, pattern_3: 20, pattern_4: 20, pattern_5: 20,
+  });
+});
+
+test("breakdown reflects partial credit and zero for unsubmitted", async () => {
+  delete process.env.LLM_JUDGE_URL;
+  delete process.env.LLM_JUDGE_TOKEN;
+  const ans = {
+    pattern_3: {
+      label: "Fibonacci",
+      interval_seconds: [1, 2, 3],
+      anomaly_seqs: [99],
+    },
+  };
+  const { total, breakdown } = await scoreWithBreakdown(ans);
+  assert.equal(total, 6);
+  assert.equal(breakdown.pattern_3, 6);
+  assert.equal(breakdown.pattern_1, 0);
+  assert.equal(breakdown.pattern_5, 0);
 });

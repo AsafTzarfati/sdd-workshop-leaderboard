@@ -14,7 +14,7 @@ import { existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
-import { score } from "./score.mjs";
+import { scoreWithBreakdown } from "./score.mjs";
 
 const PORT = Number(process.env.PORT ?? 8787);
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN ?? "*";
@@ -115,6 +115,7 @@ function shapeStandings(rows) {
       name: r.name,
       department: r.department,
       score: r.score,
+      breakdown: r.breakdown,
       submitted_at: r.submitted_at,
     })),
   };
@@ -158,7 +159,8 @@ async function handle(req, res) {
     const store = await loadStore();
 
     let s;
-    try { s = await score(payload.answer, { cache: store.judge_cache }); }
+    let breakdown;
+    try { ({ total: s, breakdown } = await scoreWithBreakdown(payload.answer, { cache: store.judge_cache })); }
     catch (e) { return send(res, 400, { error: `scoring failed: ${e.message}` }); }
     if (typeof s !== "number" || !Number.isFinite(s)) {
       return send(res, 500, { error: "scoring returned a non-number" });
@@ -169,6 +171,7 @@ async function handle(req, res) {
       name: payload.name.trim(),
       department: payload.department.trim(),
       score: Math.round(s),
+      breakdown,
       submitted_at: new Date().toISOString(),
     };
 

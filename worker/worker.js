@@ -4,7 +4,7 @@
 // KV binding name: LEADERBOARD (configured in wrangler.toml).
 // Storage shape: a single key "submissions" → JSON array of entries.
 
-import { score } from "./score.js";
+import { scoreWithBreakdown } from "./score.js";
 
 const KEY = "submissions";
 const CACHE_KEY = "judge_cache";
@@ -44,6 +44,7 @@ function shapeStandings(rows) {
       name: r.name,
       department: r.department,
       score: r.score,
+      breakdown: r.breakdown,
       submitted_at: r.submitted_at,
     })),
   };
@@ -103,7 +104,8 @@ export default {
       const cacheBefore = JSON.stringify(cache);
 
       let s;
-      try { s = await score(payload.answer, { cache, env }); }
+      let breakdown;
+      try { ({ total: s, breakdown } = await scoreWithBreakdown(payload.answer, { cache, env })); }
       catch (e) { return json({ error: `scoring failed: ${e.message}` }, 400, env); }
       if (typeof s !== "number" || !Number.isFinite(s)) {
         return json({ error: "scoring returned a non-number" }, 500, env);
@@ -114,6 +116,7 @@ export default {
         name: payload.name.trim(),
         department: payload.department.trim(),
         score: Math.round(s),
+        breakdown,
         submitted_at: new Date().toISOString(),
       };
 

@@ -6,7 +6,7 @@
 import { EXPECTATIONS, PATTERN_POINTS, normalizeLabel } from "./expectations.js";
 import { judgeLabel } from "./judge.js";
 
-export async function score(answer, opts = {}) {
+export async function scoreWithBreakdown(answer, opts = {}) {
   if (answer == null || typeof answer !== "object") {
     throw new Error("answer must be a JSON object");
   }
@@ -14,12 +14,22 @@ export async function score(answer, opts = {}) {
   const env = opts.env ?? null;
 
   let total = 0;
+  const breakdown = {};
   for (const patternId of Object.keys(EXPECTATIONS)) {
     const submitted = answer[patternId];
-    if (submitted == null || typeof submitted !== "object") continue;
-    total += await gradePattern(patternId, submitted, cache, env);
+    if (submitted == null || typeof submitted !== "object") {
+      breakdown[patternId] = 0;
+      continue;
+    }
+    const points = await gradePattern(patternId, submitted, cache, env);
+    total += points;
+    breakdown[patternId] = Math.round(points);
   }
-  return Math.round(total);
+  return { total: Math.round(total), breakdown };
+}
+
+export async function score(answer, opts = {}) {
+  return (await scoreWithBreakdown(answer, opts)).total;
 }
 
 async function gradePattern(patternId, submitted, cache, env) {

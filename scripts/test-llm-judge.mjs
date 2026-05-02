@@ -81,19 +81,21 @@ try {
   check("perfect.json scores 100", a.score === 100, `got ${a.score}`);
   await sleep(5100); // pass rate-limit window
 
-  // 2) Novel label — alias miss, LLM should grant credit → 100.
+  // 2) Formerly-novel label "the blue and white banner of the State of Israel" —
+  // promoted into pattern_1 aliases, so this should now alias-hit (no LLM call,
+  // no cache entry) and still score 100.
   const b = await post("novel-label.json");
   const cacheAfterB = readStore().judge_cache ?? {};
-  const novelKeys = Object.keys(cacheAfterB).filter((k) => k.startsWith("pattern_1::") && k.includes("blue"));
+  const pattern1Keys = Object.keys(cacheAfterB).filter((k) => k.startsWith("pattern_1::"));
   check(
-    "novel-label.json scores 100 (LLM YES verdict)",
+    "novel-label.json scores 100 (alias hit after promotion)",
     b.score === 100,
-    `got ${b.score}; cache keys for pattern_1: ${Object.keys(cacheAfterB).filter((k) => k.startsWith("pattern_1::")).join(" | ") || "(none)"}`
+    `got ${b.score}; cache keys for pattern_1: ${pattern1Keys.join(" | ") || "(none)"}`
   );
   check(
-    "judge cache populated by LLM call",
-    novelKeys.length > 0 && novelKeys.some((k) => cacheAfterB[k] === 1),
-    `keys=${novelKeys.join(",")}  values=${novelKeys.map((k) => cacheAfterB[k]).join(",")}`
+    "alias short-circuit fired (no pattern_1 cache entry from this submission)",
+    pattern1Keys.length === 0,
+    `keys=${pattern1Keys.join(",")}`
   );
   await sleep(5100);
 

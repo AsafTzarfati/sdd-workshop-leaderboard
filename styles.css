@@ -768,6 +768,23 @@ body[data-rank="num"] .row .marker { display: none; }
   .row.r1 .score, .row.perfect .score { animation: none; }
 }
 
+/* Per-pattern breakdown — surfaces which pattern bled the score. */
+.row:has(+ .breakdown-row) { border-bottom: none; }
+.breakdown-row {
+  padding: 2px var(--s-3) var(--s-2) calc(56px + var(--s-3) * 2);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: var(--ink-3);
+  border-bottom: 1px solid var(--rule-soft);
+}
+.breakdown-row .cell { white-space: nowrap; }
+.breakdown-row .cell.lost { color: var(--alert); }
+
 /* ---------- Telemetry ticker ---------- */
 .telemetry {
   margin: var(--s-6) 0 var(--s-4);
