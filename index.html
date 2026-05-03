@@ -341,8 +341,11 @@
           if (!prev || prev.rank > r.rank) promotedKeys.push({ key, rank: r.rank });
         }
       }
+      const promotedSet = new Set(promotedKeys.map((p) => p.key));
+      console.log("[celebrate] new=", newKeys.length, "promoted=", promotedKeys.map((p) => `${p.rank}:${p.key.split("|")[0]}`).join(","));
       requestAnimationFrame(() => {
         for (const key of newKeys) {
+          if (promotedSet.has(key)) continue; // a rank-up animation will own this row
           flashNew(mount.querySelector(`.row[data-key="${CSS.escape(key)}"]`));
         }
         for (const { key, rank } of promotedKeys) {
