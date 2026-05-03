@@ -258,17 +258,6 @@
       return "@" + name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 16);
     }
 
-    function renderBreakdown(b) {
-      if (!b || typeof b !== "object") return "";
-      const ids = ["pattern_1", "pattern_2", "pattern_3", "pattern_4", "pattern_5"];
-      const cells = ids.map((id, i) => {
-        const pts = Number(b[id] ?? 0);
-        const cls = pts < 20 ? "cell lost" : "cell";
-        return `<span class="${cls}" title="${id}">P${i + 1} ${pts}/20</span>`;
-      }).join("");
-      return `<div class="breakdown-row" role="row" aria-label="per-pattern breakdown">${cells}</div>`;
-    }
-
     function renderRow(r) {
       const tier = r.rank <= 3 ? `r${r.rank}` : "";
       const perfect = r.score >= 100 ? "perfect" : "";
@@ -286,7 +275,7 @@
             <span class="score" aria-label="score: ${r.score} out of 100"><span class="val">${r.score}</span><span class="suf">/100</span></span>
             <span class="time"><span>${clockTime(r.submitted_at)}</span><span class="rel">· ${relTime(r.submitted_at)}</span></span>
           </span>
-        </div>${renderBreakdown(r.breakdown)}`;
+        </div>`;
     }
 
     async function fetchStandings() {
