@@ -11,6 +11,9 @@
   <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <!-- Confetti for rank-1 celebrations. -->
+  <script src="https://unpkg.com/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 </head>
 
 <body data-bg="radar" data-density="comfortable" data-score="default" data-rank="marker" data-accent="cyan">
@@ -64,19 +67,14 @@
             </linearGradient>
           </defs>
           <rect width="220" height="120" fill="url(#hp-grid)"/>
-          <!-- waypoints -->
-          <g stroke="var(--ink-3)" fill="var(--paper)" stroke-width="1">
-            <circle cx="18"  cy="96" r="3"/>
-            <circle cx="70"  cy="60" r="3"/>
-            <circle cx="130" cy="82" r="3"/>
-            <circle cx="188" cy="34" r="3"/>
-          </g>
-          <!-- planned path -->
-          <path d="M18 96 L70 60 L130 82 L188 34" fill="none" stroke="var(--ink-3)" stroke-width="1" stroke-dasharray="3 4"/>
-          <!-- actual flown — holographic gradient stroke, draws on load -->
-          <path class="path-actual" d="M18 96 Q 44 70 70 60 T 130 82 Q 158 70 188 34" fill="none" stroke="url(#hp-stroke)" stroke-width="2" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" stroke-linecap="round"/>
-          <!-- drone marker at current pos -->
-          <g class="drone-marker" transform="translate(188 34)" stroke="var(--accent)" fill="var(--paper)" stroke-width="1.4">
+          <!-- Drone trail — short holographic segment that chases the drone -->
+          <path class="path-trail" d="M 194.25 46 L 178.08 46 L 170 32 L 161.92 46 L 145.75 46 L 153.83 60 L 145.75 74 L 161.92 74 L 170 88 L 178.08 74 L 194.25 74 L 186.17 60 Z"
+                fill="none" stroke="url(#hp-stroke)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                pathLength="1" stroke-dasharray="0.08 0.92">
+            <animate attributeName="stroke-dashoffset" from="0.08" to="-0.92" dur="14s" repeatCount="indefinite"/>
+          </path>
+          <!-- drone marker — flies the Star of David -->
+          <g class="drone-marker" stroke="var(--accent)" fill="var(--paper)" stroke-width="1.4">
             <circle class="ping" cx="0" cy="0" r="7" fill="none" stroke="var(--accent)" stroke-width="1" opacity="0"/>
             <line x1="-5" y1="-5" x2="5" y2="5"/>
             <line x1="5"  y1="-5" x2="-5" y2="5"/>
@@ -84,11 +82,12 @@
             <circle cx="5"  cy="-5" r="2"/>
             <circle cx="-5" cy="5"  r="2"/>
             <circle cx="5"  cy="5"  r="2"/>
+            <animateMotion dur="14s" repeatCount="indefinite" rotate="0"
+              path="M 194.25 46 L 178.08 46 L 170 32 L 161.92 46 L 145.75 46 L 153.83 60 L 145.75 74 L 161.92 74 L 170 88 L 178.08 74 L 194.25 74 L 186.17 60 Z"/>
           </g>
           <!-- coordinate labels -->
           <g font-family="ui-monospace, monospace" font-size="8" fill="var(--ink-3)">
             <text x="4" y="110">WP-00</text>
-            <text x="152" y="22">WP-03 · alt 42m</text>
           </g>
         </svg>
         <button class="refresh" type="button" aria-label="Refresh standings now">
@@ -258,6 +257,21 @@
       return "@" + name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 16);
     }
 
+    function renderBreakdown(b) {
+      if (!b || typeof b !== "object") return "";
+      const ids = ["pattern_1", "pattern_2", "pattern_3", "pattern_4", "pattern_5"];
+      const cells = ids.map((id, i) => {
+        const pts = Number(b[id] ?? 0);
+        const cls = pts < 20 ? "cell lost" : "cell";
+        return `<span class="${cls}" title="${id}">P${i + 1} ${pts}/20</span>`;
+      }).join("");
+      return `<div class="breakdown-row" role="row" aria-label="per-pattern breakdown">${cells}</div>`;
+    }
+
+    function rowKey(r) {
+      return `${r.name}|${r.department}|${r.submitted_at}`;
+    }
+
     function renderRow(r) {
       const tier = r.rank <= 3 ? `r${r.rank}` : "";
       const perfect = r.score >= 100 ? "perfect" : "";
@@ -267,7 +281,7 @@
         : "";
       const rankNum = String(r.rank).padStart(2, "0");
       return `
-        <div class="row row-grid ${tier} ${perfect}" role="row">
+        <div class="row row-grid ${tier} ${perfect}" role="row" data-key="${escape(rowKey(r))}">
           <span class="rank">${markerHTML}${rankNum}</span>
           <span class="op">${escape(r.name)}<span class="handle">${escape(handleFromName(r.name))}</span></span>
           <span class="dept">${escape(r.department)}</span>
@@ -275,7 +289,70 @@
             <span class="score" aria-label="score: ${r.score} out of 100"><span class="val">${r.score}</span><span class="suf">/100</span></span>
             <span class="time"><span>${clockTime(r.submitted_at)}</span><span class="rel">· ${relTime(r.submitted_at)}</span></span>
           </span>
-        </div>`;
+        </div>${renderBreakdown(r.breakdown)}`;
+    }
+
+    // ── Animation triggers ────────────────────────────────────────────
+    let prevByKey = null; // null until first successful fetch — suppresses initial-load animations
+    const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    function fireConfetti(rect) {
+      if (!window.confetti || reduceMotion) return;
+      const x = (rect.left + rect.width / 2) / window.innerWidth;
+      const y = (rect.top + rect.height / 2) / window.innerHeight;
+      window.confetti({
+        particleCount: 140,
+        spread: 90,
+        startVelocity: 45,
+        origin: { x: Math.max(0, Math.min(1, x)), y: Math.max(0, Math.min(1, y)) },
+        colors: ["#FFB347", "#4FE2FF", "#FF4FD8", "#4FD18B", "#ffffff"],
+      });
+    }
+
+    function celebrate(rowEl, rank) {
+      if (!rowEl) return;
+      if (reduceMotion && rank <= 3) return; // row-new flash is handled separately
+      const cls = `rank-up-${rank}`;
+      rowEl.classList.add(cls);
+      const ms = rank === 1 ? 2500 : rank === 2 ? 2000 : 1500;
+      setTimeout(() => rowEl.classList.remove(cls), ms);
+      if (rank === 1) fireConfetti(rowEl.getBoundingClientRect());
+    }
+
+    function flashNew(rowEl) {
+      if (!rowEl) return;
+      rowEl.classList.add("row-new");
+      setTimeout(() => rowEl.classList.remove("row-new"), 2000);
+    }
+
+    function applyAnimations(rows) {
+      const mount = $("#rows-mount");
+      const nextByKey = new Map(rows.map((r) => [rowKey(r), r]));
+      if (prevByKey === null) {
+        prevByKey = nextByKey;
+        return;
+      }
+      const newKeys = [];
+      const promotedKeys = []; // [{key, rank}]
+      for (const [key, r] of nextByKey) {
+        const prev = prevByKey.get(key);
+        if (!prev) newKeys.push(key);
+        if (r.rank <= 3) {
+          if (!prev || prev.rank > r.rank) promotedKeys.push({ key, rank: r.rank });
+        }
+      }
+      const promotedSet = new Set(promotedKeys.map((p) => p.key));
+      console.log("[celebrate] new=", newKeys.length, "promoted=", promotedKeys.map((p) => `${p.rank}:${p.key.split("|")[0]}`).join(","));
+      requestAnimationFrame(() => {
+        for (const key of newKeys) {
+          if (promotedSet.has(key)) continue; // a rank-up animation will own this row
+          flashNew(mount.querySelector(`.row[data-key="${CSS.escape(key)}"]`));
+        }
+        for (const { key, rank } of promotedKeys) {
+          celebrate(mount.querySelector(`.row[data-key="${CSS.escape(key)}"]`), rank);
+        }
+      });
+      prevByKey = nextByKey;
     }
 
     async function fetchStandings() {
@@ -289,6 +366,7 @@
           : `<div class="show-all" style="opacity:.6">no entries yet — be the first to drop a run</div>`;
         const label = count === 1 ? "1 submission" : `${count} submissions`;
         $("#standings-count").textContent = label;
+        applyAnimations(rows);
       } catch (e) {
         mount.innerHTML = `<div class="show-all" style="opacity:.6">backend unreachable — try again in a moment</div>`;
         $("#standings-count").textContent = "offline";

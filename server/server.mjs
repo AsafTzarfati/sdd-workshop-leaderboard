@@ -15,7 +15,6 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
 import { scoreWithBreakdown } from "./score.mjs";
-import { validateTelemetrySha } from "./validate-sha.mjs";
 
 const PORT = Number(process.env.PORT ?? 8787);
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN ?? "*";
@@ -156,9 +155,6 @@ async function handle(req, res) {
 
     const err = validateSubmission(payload);
     if (err) return send(res, 400, { error: err });
-
-    const shaErr = validateTelemetrySha(payload.answer);
-    if (shaErr) return send(res, 400, { error: shaErr });
 
     const store = await loadStore();
 

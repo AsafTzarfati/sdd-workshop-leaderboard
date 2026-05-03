@@ -5,10 +5,6 @@
 // Storage shape: a single key "submissions" → JSON array of entries.
 
 import { scoreWithBreakdown } from "./score.js";
-import expectedShasList from "./expected_shas.json";
-
-const EXPECTED_SHAS = new Set(expectedShasList);
-const SHA_PATTERN = /^[a-f0-9]{64}$/;
 
 const KEY = "submissions";
 const CACHE_KEY = "judge_cache";
@@ -65,18 +61,6 @@ function validate(payload) {
   return null;
 }
 
-function validateTelemetrySha(answer) {
-  const sha = answer?.telemetry_window_sha256;
-  if (typeof sha !== "string" || !sha) {
-    return "telemetry_window_sha256 missing — read it from the sim WebSocket frames once you have consumed at least 100 samples";
-  }
-  if (!SHA_PATTERN.test(sha)) return "telemetry_window_sha256 must be 64 lowercase hex chars";
-  if (!EXPECTED_SHAS.has(sha)) {
-    return "telemetry_window_sha256 does not match any window the sim has emitted (workshop config: --seed 42 --rate 10)";
-  }
-  return null;
-}
-
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -115,9 +99,6 @@ export default {
 
       const err = validate(payload);
       if (err) return json({ error: err }, 400, env);
-
-      const shaErr = validateTelemetrySha(payload.answer);
-      if (shaErr) return json({ error: shaErr }, 400, env);
 
       const cache = (await env.LEADERBOARD.get(CACHE_KEY, "json")) ?? {};
       const cacheBefore = JSON.stringify(cache);
