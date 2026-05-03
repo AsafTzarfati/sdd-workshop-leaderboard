@@ -293,7 +293,15 @@
     }
 
     // ── Animation triggers ────────────────────────────────────────────
-    let prevByKey = null; // null until first successful fetch — suppresses initial-load animations
+    const PREV_STORE_KEY = "drone-watchdog/prev-standings";
+    let prevByKey = (() => {
+      try {
+        const raw = sessionStorage.getItem(PREV_STORE_KEY);
+        if (raw) return new Map(JSON.parse(raw));
+      } catch {}
+      return null;
+    })();
+    let pendingCelebrateKey = null; // set on form-submit success; force-fires the animation regardless of diff state
     const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     function fireConfetti(rect) {
@@ -327,22 +335,30 @@
 
     function applyAnimations(rows) {
       const mount = $("#rows-mount");
-      const nextByKey = new Map(rows.map((r) => [rowKey(r), r]));
-      if (prevByKey === null) {
-        prevByKey = nextByKey;
-        return;
-      }
+      const nextByKey = new Map(rows.map((r) => [rowKey(r), { rank: r.rank, score: r.score }]));
+      const isFirstEver = prevByKey === null;
       const newKeys = [];
       const promotedKeys = []; // [{key, rank}]
-      for (const [key, r] of nextByKey) {
-        const prev = prevByKey.get(key);
-        if (!prev) newKeys.push(key);
-        if (r.rank <= 3) {
-          if (!prev || prev.rank > r.rank) promotedKeys.push({ key, rank: r.rank });
+      if (!isFirstEver) {
+        for (const [key, r] of nextByKey) {
+          const prev = prevByKey.get(key);
+          if (!prev) newKeys.push(key);
+          if (r.rank <= 3) {
+            if (!prev || prev.rank > r.rank) promotedKeys.push({ key, rank: r.rank });
+          }
         }
       }
+      // Force-celebrate the user's own submission, even on an initial load (e.g. after Cmd+Shift+R).
+      if (pendingCelebrateKey && nextByKey.has(pendingCelebrateKey)) {
+        const r = nextByKey.get(pendingCelebrateKey);
+        if (!newKeys.includes(pendingCelebrateKey)) newKeys.push(pendingCelebrateKey);
+        if (r.rank <= 3 && !promotedKeys.some((p) => p.key === pendingCelebrateKey)) {
+          promotedKeys.push({ key: pendingCelebrateKey, rank: r.rank });
+        }
+        pendingCelebrateKey = null;
+      }
       const promotedSet = new Set(promotedKeys.map((p) => p.key));
-      console.log("[celebrate] new=", newKeys.length, "promoted=", promotedKeys.map((p) => `${p.rank}:${p.key.split("|")[0]}`).join(","));
+      console.log("[celebrate] firstEver=", isFirstEver, "new=", newKeys.length, "promoted=", promotedKeys.map((p) => `${p.rank}:${p.key.split("|")[0]}`).join(","));
       requestAnimationFrame(() => {
         for (const key of newKeys) {
           if (promotedSet.has(key)) continue; // a rank-up animation will own this row
@@ -353,6 +369,7 @@
         }
       });
       prevByKey = nextByKey;
+      try { sessionStorage.setItem(PREV_STORE_KEY, JSON.stringify([...prevByKey])); } catch {}
     }
 
     async function fetchStandings() {
@@ -417,11 +434,18 @@
           setStatus(body.error || `submit failed (HTTP ${res.status})`, "err");
         } else {
           setStatus(`staged ✓ — score ${body.score}/100`, "ok");
+          if (body.name && body.department && body.submitted_at) {
+            pendingCelebrateKey = `${body.name}|${body.department}|${body.submitted_at}`;
+          }
           $("#f-name").value = "";
           $("#f-dept").value = "";
           fileInput.value = "";
           $("#file-name").textContent = "";
+          // Poll a few times — KV propagation can be 1–10 s, and we want to catch the row when it lands.
           fetchStandings();
+          setTimeout(fetchStandings, 1500);
+          setTimeout(fetchStandings, 4000);
+          setTimeout(fetchStandings, 8000);
         }
       } catch (e) {
         setStatus(`network error — is the backend running?`, "err");
