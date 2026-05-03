@@ -67,19 +67,14 @@
             </linearGradient>
           </defs>
           <rect width="220" height="120" fill="url(#hp-grid)"/>
-          <!-- waypoints -->
-          <g stroke="var(--ink-3)" fill="var(--paper)" stroke-width="1">
-            <circle cx="18"  cy="96" r="3"/>
-            <circle cx="70"  cy="60" r="3"/>
-            <circle cx="130" cy="82" r="3"/>
-            <circle cx="188" cy="34" r="3"/>
-          </g>
-          <!-- planned path -->
-          <path d="M18 96 L70 60 L130 82 L188 34" fill="none" stroke="var(--ink-3)" stroke-width="1" stroke-dasharray="3 4"/>
-          <!-- actual flown — holographic gradient stroke, draws on load -->
-          <path class="path-actual" d="M18 96 Q 44 70 70 60 T 130 82 Q 158 70 188 34" fill="none" stroke="url(#hp-stroke)" stroke-width="2" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" stroke-linecap="round"/>
-          <!-- drone marker at current pos -->
-          <g class="drone-marker" transform="translate(188 34)" stroke="var(--accent)" fill="var(--paper)" stroke-width="1.4">
+          <!-- Drone trail — short holographic segment that chases the drone -->
+          <path class="path-trail" d="M 194.25 46 L 178.08 46 L 170 32 L 161.92 46 L 145.75 46 L 153.83 60 L 145.75 74 L 161.92 74 L 170 88 L 178.08 74 L 194.25 74 L 186.17 60 Z"
+                fill="none" stroke="url(#hp-stroke)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                pathLength="1" stroke-dasharray="0.08 0.92">
+            <animate attributeName="stroke-dashoffset" from="0.08" to="-0.92" dur="14s" repeatCount="indefinite"/>
+          </path>
+          <!-- drone marker — flies the Star of David -->
+          <g class="drone-marker" stroke="var(--accent)" fill="var(--paper)" stroke-width="1.4">
             <circle class="ping" cx="0" cy="0" r="7" fill="none" stroke="var(--accent)" stroke-width="1" opacity="0"/>
             <line x1="-5" y1="-5" x2="5" y2="5"/>
             <line x1="5"  y1="-5" x2="-5" y2="5"/>
@@ -87,11 +82,12 @@
             <circle cx="5"  cy="-5" r="2"/>
             <circle cx="-5" cy="5"  r="2"/>
             <circle cx="5"  cy="5"  r="2"/>
+            <animateMotion dur="14s" repeatCount="indefinite" rotate="0"
+              path="M 194.25 46 L 178.08 46 L 170 32 L 161.92 46 L 145.75 46 L 153.83 60 L 145.75 74 L 161.92 74 L 170 88 L 178.08 74 L 194.25 74 L 186.17 60 Z"/>
           </g>
           <!-- coordinate labels -->
           <g font-family="ui-monospace, monospace" font-size="8" fill="var(--ink-3)">
             <text x="4" y="110">WP-00</text>
-            <text x="152" y="22">WP-03 · alt 42m</text>
           </g>
         </svg>
         <button class="refresh" type="button" aria-label="Refresh standings now">

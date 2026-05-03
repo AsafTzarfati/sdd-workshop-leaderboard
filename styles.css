@@ -716,12 +716,9 @@ body[data-rank="num"] .row .marker { display: none; }
 .howto-list li .body { color: var(--ink-2); }
 .howto-list li .arrow { color: var(--accent); }
 
-/* Flight path draw-on-load + drone marker pulse */
-.flightpath .path-actual {
-  animation: pathdraw 1.6s var(--ease-out) 0.2s forwards;
-}
-@keyframes pathdraw {
-  to { stroke-dashoffset: 0; }
+/* Drone trail glow + ping pulse for the Star of David flight */
+.flightpath .path-trail {
+  filter: drop-shadow(0 0 3px rgba(79,226,255,0.45));
 }
 .flightpath .drone-marker {
   filter: drop-shadow(0 0 4px rgba(255,179,71,0.55));
@@ -737,7 +734,6 @@ body[data-rank="num"] .row .marker { display: none; }
   100% { r: 14; opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .flightpath .path-actual { stroke-dashoffset: 0; animation: none; }
   .flightpath .drone-marker .ping { animation: none; opacity: 0; }
 }
 
