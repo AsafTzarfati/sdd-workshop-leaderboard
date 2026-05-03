@@ -893,45 +893,38 @@ body[data-rank="num"] .row .marker { display: none; }
 }
 .row.row-new { animation: row-new-flash 2s ease-out; }
 
-/* rank 3 — magenta flood + marker pulse */
+/* Top-3 rank-up animations — solid colour floods, scale bumps, thick borders.
+   Subtle alphas were getting lost on the dark page; these are intentionally loud. */
+
 @keyframes rank-up-3-flood {
-  0%, 100% { background-color: transparent;              box-shadow: none; }
-  20%, 80% { background-color: rgba(255, 79, 216, 0.32); box-shadow: inset 0 0 0 3px var(--magenta), 0 0 32px rgba(255, 79, 216, 0.7); }
+  0%, 100% { background-color: transparent;            transform: scale(1); box-shadow: none; }
+  15%, 85% { background-color: rgba(255, 79, 216, 0.7); transform: scale(1.025); box-shadow: inset 0 0 0 4px var(--magenta), 0 0 36px rgba(255, 79, 216, 0.85); }
 }
 @keyframes rank-up-3-marker {
   0%, 100% { text-shadow: 0 0 10px var(--magenta-soft); transform: scale(1); }
-  50%      { text-shadow: 0 0 24px var(--magenta), 0 0 42px var(--magenta); transform: scale(1.5); }
+  50%      { text-shadow: 0 0 24px var(--magenta), 0 0 44px var(--magenta); transform: scale(1.6); }
 }
-.row.rank-up-3        { animation: rank-up-3-flood 1.8s ease-in-out !important; }
+.row.rank-up-3        { animation: rank-up-3-flood 2s ease-in-out !important; position: relative; z-index: 5; }
 .row.rank-up-3 .marker { animation: rank-up-3-marker .45s ease-in-out 4 !important; display: inline-block; color: var(--magenta) !important; }
 
-/* rank 2 — cyan ring + flood */
 @keyframes rank-up-2-ring {
-  0%   { background-color: transparent;                  box-shadow: inset 0 0 0 0 var(--cyan), 0 0 0 0 rgba(79, 226, 255, 0); }
-  20%  { background-color: rgba(79, 226, 255, 0.38);     box-shadow: inset 0 0 0 3px var(--cyan), 0 0 40px rgba(79, 226, 255, 0.7); }
-  60%  { background-color: rgba(79, 226, 255, 0.22);     box-shadow: inset 0 0 0 2px var(--cyan), 0 0 28px rgba(79, 226, 255, 0.5); }
-  100% { background-color: transparent;                  box-shadow: inset 0 0 0 0 var(--cyan), 0 0 0 0 rgba(79, 226, 255, 0); }
+  0%, 100% { background-color: transparent;            transform: scale(1); box-shadow: inset 0 0 0 0 var(--cyan), 0 0 0 0 rgba(79, 226, 255, 0); }
+  15%, 85% { background-color: rgba(79, 226, 255, 0.7); transform: scale(1.025); box-shadow: inset 0 0 0 4px var(--cyan), 0 0 36px rgba(79, 226, 255, 0.85); }
 }
-.row.rank-up-2 { animation: rank-up-2-ring 2.2s ease-out !important; }
+.row.rank-up-2 { animation: rank-up-2-ring 2s ease-in-out !important; position: relative; z-index: 5; }
 
-/* rank 1 — gold shimmer + outline; confetti fired from JS */
-@keyframes rank-up-1-shimmer {
-  0%   { background-position: -150% 0; box-shadow: 0 0 0 0 rgba(255, 179, 71, 0); }
-  20%  { box-shadow: 0 0 40px rgba(255, 179, 71, 0.75); }
-  100% { background-position: 250% 0;  box-shadow: 0 0 0 0 rgba(255, 179, 71, 0); }
+@keyframes rank-up-1-glow {
+  0%, 100% { background-color: transparent;            transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 179, 71, 0); }
+  15%, 85% { background-color: rgba(255, 179, 71, 0.78); transform: scale(1.035); box-shadow: inset 0 0 0 5px var(--amber), 0 0 50px rgba(255, 179, 71, 0.95); }
 }
 .row.rank-up-1 {
-  background-image: linear-gradient(90deg, rgba(255, 179, 71, 0) 0%, rgba(255, 179, 71, 0.55) 35%, rgba(255, 179, 71, 0.98) 50%, rgba(255, 179, 71, 0.55) 65%, rgba(255, 179, 71, 0) 100%) !important;
-  background-size: 200% 100% !important;
-  background-repeat: no-repeat !important;
-  animation: rank-up-1-shimmer 2.5s ease-out !important;
-  outline: 2px solid var(--amber) !important;
-  outline-offset: -2px !important;
+  animation: rank-up-1-glow 2.4s ease-in-out !important;
+  position: relative; z-index: 5;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .row.rank-up-1, .row.rank-up-2, .row.rank-up-3 { animation: none; outline: none; background-image: none; background: transparent; }
-  .row.rank-up-3 .marker { animation: none; }
+  .row.rank-up-1, .row.rank-up-2, .row.rank-up-3 { animation: none !important; transform: none !important; box-shadow: none !important; background-color: transparent !important; }
+  .row.rank-up-3 .marker { animation: none !important; }
 }
 </content>
 </invoke>
