@@ -39,6 +39,7 @@ export async function judgeLabel(patternId, rawLabel, cache) {
 
   if (verdict === null) return { credit: 0, source: "miss" };
   if (cache) cache[key] = verdict ? 1 : 0;
+  console.log(`[judge] ${patternId} ${norm} -> ${verdict ? "YES" : "NO"} (llm)`);
   return { credit: verdict ? 1 : 0, source: "llm" };
 }
 

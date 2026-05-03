@@ -716,12 +716,9 @@ body[data-rank="num"] .row .marker { display: none; }
 .howto-list li .body { color: var(--ink-2); }
 .howto-list li .arrow { color: var(--accent); }
 
-/* Flight path draw-on-load + drone marker pulse */
-.flightpath .path-actual {
-  animation: pathdraw 1.6s var(--ease-out) 0.2s forwards;
-}
-@keyframes pathdraw {
-  to { stroke-dashoffset: 0; }
+/* Drone trail glow + ping pulse for the Star of David flight */
+.flightpath .path-trail {
+  filter: drop-shadow(0 0 3px rgba(79,226,255,0.45));
 }
 .flightpath .drone-marker {
   filter: drop-shadow(0 0 4px rgba(255,179,71,0.55));
@@ -737,7 +734,6 @@ body[data-rank="num"] .row .marker { display: none; }
   100% { r: 14; opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .flightpath .path-actual { stroke-dashoffset: 0; animation: none; }
   .flightpath .drone-marker .ping { animation: none; opacity: 0; }
 }
 
@@ -767,6 +763,23 @@ body[data-rank="num"] .row .marker { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .row.r1 .score, .row.perfect .score { animation: none; }
 }
+
+/* Per-pattern breakdown — surfaces which pattern bled the score. */
+.row:has(+ .breakdown-row) { border-bottom: none; }
+.breakdown-row {
+  padding: 2px var(--s-3) var(--s-2) calc(56px + var(--s-3) * 2);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: var(--ink-3);
+  border-bottom: 1px solid var(--rule-soft);
+}
+.breakdown-row .cell { white-space: nowrap; }
+.breakdown-row .cell.lost { color: var(--alert); }
 
 /* ---------- Telemetry ticker ---------- */
 .telemetry {
@@ -870,6 +883,48 @@ body[data-rank="num"] .row .marker { display: none; }
 /* Desktop: hide the meta-line wrapper, show columns directly */
 @media (min-width: 721px) {
   .row .meta-line { display: contents; }
+}
+
+/* ── New-row + top-3 celebration animations ───────────────────────── */
+
+@keyframes row-new-flash {
+  0%   { background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+  100% { background: transparent;        box-shadow: none; }
+}
+.row.row-new { animation: row-new-flash 2s ease-out; }
+
+/* rank 3 — magenta marker pulses 3 times */
+@keyframes rank-up-3-pulse {
+  0%, 100% { text-shadow: 0 0 10px var(--magenta-soft); transform: scale(1); }
+  50%      { text-shadow: 0 0 18px var(--magenta), 0 0 30px var(--magenta-soft); transform: scale(1.18); }
+}
+.row.rank-up-3 .marker { animation: rank-up-3-pulse .5s ease-in-out 3; display: inline-block; }
+
+/* rank 2 — cyan ring sweeps in then fades */
+@keyframes rank-up-2-ring {
+  0%   { box-shadow: inset 0 0 0 0 var(--cyan), 0 0 0 0 var(--cyan-soft); background: transparent; }
+  35%  { box-shadow: inset 0 0 0 2px var(--cyan), 0 0 28px var(--cyan-soft); background: var(--cyan-soft); }
+  100% { box-shadow: inset 0 0 0 0 var(--cyan), 0 0 0 0 var(--cyan-soft); background: transparent; }
+}
+.row.rank-up-2 { animation: rank-up-2-ring 2s ease-out; }
+
+/* rank 1 — gold shimmer sweep + outline; confetti is fired from JS */
+@keyframes rank-up-1-shimmer {
+  0%   { background-position: -150% 0; }
+  100% { background-position: 250% 0; }
+}
+.row.rank-up-1 {
+  background-image: linear-gradient(90deg, transparent 0%, var(--amber-soft) 30%, var(--amber) 50%, var(--amber-soft) 70%, transparent 100%);
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: rank-up-1-shimmer 2.5s ease-out;
+  outline: 1px solid var(--amber);
+  outline-offset: -1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row.rank-up-1, .row.rank-up-2 { animation: none; outline: none; background-image: none; }
+  .row.rank-up-3 .marker         { animation: none; }
 }
 </content>
 </invoke>

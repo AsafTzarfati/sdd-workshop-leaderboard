@@ -18,6 +18,7 @@ export const EXPECTATIONS = {
       "israeli flag", "flag of israel", "israel flag", "il flag",
       "star of david", "magen david", "shield of david", "hexagram",
       "jewish star", "six-pointed star", "six pointed star",
+      "the blue and white banner of the state of israel",
     ],
   },
 
