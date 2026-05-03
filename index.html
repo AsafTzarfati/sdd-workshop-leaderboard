@@ -230,7 +230,7 @@
   <!-- ===== Backend integration ===== -->
   <script>
     // Cloudflare Worker — see worker/README.md for redeploy steps.
-    const BACKEND_URL = "https://drone-watchdog.asaff19899.workers.dev";
+    const BACKEND_URL = "http://localhost:8787";
     const POLL_MS = 5000;
 
     const $ = (sel) => document.querySelector(sel);
@@ -372,20 +372,30 @@
       try { sessionStorage.setItem(PREV_STORE_KEY, JSON.stringify([...prevByKey])); } catch {}
     }
 
+    let lastRenderHash = null;
     async function fetchStandings() {
       const mount = $("#rows-mount");
       try {
         const res = await fetch(`${BACKEND_URL}/standings`, { cache: "no-store" });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const { count, rows } = await res.json();
-        mount.innerHTML = rows.length
-          ? rows.map(renderRow).join("")
-          : `<div class="show-all" style="opacity:.6">no entries yet — be the first to drop a run</div>`;
+        // Skip the DOM rewrite if nothing changed — re-rendering during a celebration
+        // strips the rank-up-N class off the row mid-animation.
+        const hash = rows.length
+          ? rows.map((r) => `${r.rank}|${r.name}|${r.department}|${r.score}|${r.submitted_at}`).join("\n")
+          : "__empty__";
+        if (hash !== lastRenderHash) {
+          mount.innerHTML = rows.length
+            ? rows.map(renderRow).join("")
+            : `<div class="show-all" style="opacity:.6">no entries yet — be the first to drop a run</div>`;
+          lastRenderHash = hash;
+        }
         const label = count === 1 ? "1 submission" : `${count} submissions`;
         $("#standings-count").textContent = label;
         applyAnimations(rows);
       } catch (e) {
         mount.innerHTML = `<div class="show-all" style="opacity:.6">backend unreachable — try again in a moment</div>`;
+        lastRenderHash = null;
         $("#standings-count").textContent = "offline";
         console.warn("[standings] fetch failed:", e.message);
       }
