@@ -888,5 +888,47 @@ body[data-rank="num"] .row .marker { display: none; }
 @media (min-width: 721px) {
   .row .meta-line { display: contents; }
 }
+
+/* ── New-row + top-3 celebration animations ───────────────────────── */
+
+@keyframes row-new-flash {
+  0%   { background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+  100% { background: transparent;        box-shadow: none; }
+}
+.row.row-new { animation: row-new-flash 2s ease-out; }
+
+/* rank 3 — magenta marker pulses 3 times */
+@keyframes rank-up-3-pulse {
+  0%, 100% { text-shadow: 0 0 10px var(--magenta-soft); transform: scale(1); }
+  50%      { text-shadow: 0 0 18px var(--magenta), 0 0 30px var(--magenta-soft); transform: scale(1.18); }
+}
+.row.rank-up-3 .marker { animation: rank-up-3-pulse .5s ease-in-out 3; display: inline-block; }
+
+/* rank 2 — cyan ring sweeps in then fades */
+@keyframes rank-up-2-ring {
+  0%   { box-shadow: inset 0 0 0 0 var(--cyan), 0 0 0 0 var(--cyan-soft); background: transparent; }
+  35%  { box-shadow: inset 0 0 0 2px var(--cyan), 0 0 28px var(--cyan-soft); background: var(--cyan-soft); }
+  100% { box-shadow: inset 0 0 0 0 var(--cyan), 0 0 0 0 var(--cyan-soft); background: transparent; }
+}
+.row.rank-up-2 { animation: rank-up-2-ring 2s ease-out; }
+
+/* rank 1 — gold shimmer sweep + outline; confetti is fired from JS */
+@keyframes rank-up-1-shimmer {
+  0%   { background-position: -150% 0; }
+  100% { background-position: 250% 0; }
+}
+.row.rank-up-1 {
+  background-image: linear-gradient(90deg, transparent 0%, var(--amber-soft) 30%, var(--amber) 50%, var(--amber-soft) 70%, transparent 100%);
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: rank-up-1-shimmer 2.5s ease-out;
+  outline: 1px solid var(--amber);
+  outline-offset: -1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row.rank-up-1, .row.rank-up-2 { animation: none; outline: none; background-image: none; }
+  .row.rank-up-3 .marker         { animation: none; }
+}
 </content>
 </invoke>
