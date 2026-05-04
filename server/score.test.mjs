@@ -126,6 +126,22 @@ test("hexagram component check is case-insensitive and substring-tolerant", asyn
   assert.equal(await score(ans), 25);
 });
 
+test("Pattern 4 source/target accept both bare and dotted-path field names", async () => {
+  // Bare form (canonical, what the schema documents).
+  const bare = { pattern_4: { ...PERFECT.pattern_4 } };
+  // Dotted form (sub-object prefix; what an LLM that misread the schema
+  // might emit).
+  const dotted = {
+    pattern_4: {
+      ...PERFECT.pattern_4,
+      source_field: "apollo11.current_a",
+      target_field: "apollo11.motor_temp_c[0]",
+    },
+  };
+  assert.equal(await score(bare), 25);
+  assert.equal(await score(dotted), 25);
+});
+
 test("scoreWithBreakdown returns total + per-pattern map", async () => {
   const { total, breakdown } = await scoreWithBreakdown(PERFECT);
   assert.equal(total, 100);

@@ -49,6 +49,16 @@ async function gradePattern(patternId, submitted, cache, env) {
   return (earnedWeight / totalWeight) * PATTERN_POINTS;
 }
 
+// Strip the "subobj." prefix from a dotted field path so the grader accepts
+// both bare and dotted forms (e.g. "current_a" and "apollo11.current_a"
+// both reduce to "current_a"). Workshop schema steers students toward bare
+// names; this is defensive in case their watchdog emits the dotted form.
+function bareFieldName(s) {
+  if (typeof s !== "string") return s;
+  const dot = s.lastIndexOf(".");
+  return dot === -1 ? s : s.slice(dot + 1);
+}
+
 function gradeStructural(c, submitted) {
   switch (c.kind) {
     case "range": {
@@ -73,7 +83,8 @@ function gradeStructural(c, submitted) {
       return c.expected.every((e, i) => Number(arr[i]) === e);
     }
     case "exact_string": {
-      return submitted[c.field] === c.expected;
+      const v = submitted[c.field];
+      return v === c.expected || bareFieldName(v) === c.expected;
     }
     case "exact_string_ci": {
       const v = submitted[c.field];
@@ -81,7 +92,8 @@ function gradeStructural(c, submitted) {
     }
     case "starts_with": {
       const v = submitted[c.field];
-      return typeof v === "string" && v.startsWith(c.prefix);
+      if (typeof v !== "string") return false;
+      return v.startsWith(c.prefix) || bareFieldName(v).startsWith(c.prefix);
     }
     case "normalized_string": {
       return normalizeLabel(submitted[c.field]) === normalizeLabel(c.expected);
