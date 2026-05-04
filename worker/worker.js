@@ -11,6 +11,7 @@ const CACHE_KEY = "judge_cache";
 const MAX_FIELD_LEN = 80;
 const MAX_ANSWER_BYTES = 64 * 1024;
 const RATE_WINDOW_MS = 5_000;
+const ADMIN_PASSWORD = "Er45%bnm";
 
 // Per-isolate IP rate limit. Workers spin up many isolates so this is best-effort, not airtight.
 const lastSubmitByIp = new Map();
@@ -76,6 +77,17 @@ export default {
     if (request.method === "GET" && url.pathname === "/standings") {
       const rows = (await env.LEADERBOARD.get(KEY, "json")) ?? [];
       return json(shapeStandings(rows), 200, env);
+    }
+
+    if (request.method === "POST" && url.pathname === "/reset") {
+      let payload;
+      try { payload = await request.json(); }
+      catch { return json({ error: "body must be JSON" }, 400, env); }
+      if (!payload || payload.password !== ADMIN_PASSWORD) {
+        return json({ error: "unauthorized" }, 401, env);
+      }
+      await env.LEADERBOARD.put(KEY, JSON.stringify([]));
+      return json({ ok: true, cleared: true }, 200, env);
     }
 
     if (request.method === "POST" && url.pathname === "/submit") {

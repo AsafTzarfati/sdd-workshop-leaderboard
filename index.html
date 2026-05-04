@@ -140,6 +140,7 @@
       <div class="section-rule">
         <span id="standings-label" class="label">Standings</span>
         <span class="line"></span>
+        <button id="clean-table-btn" class="btn ghost" type="button" style="margin-right:10px;font-size:11px;padding:4px 10px;">Clean table</button>
         <span id="standings-count" class="count">— submissions</span>
       </div>
 
@@ -461,6 +462,36 @@
         setStatus(`network error — is the backend running?`, "err");
       } finally {
         btn.disabled = false;
+      }
+    });
+
+    // Clean table — admin-only, password-gated reset of all standings.
+    $("#clean-table-btn")?.addEventListener("click", async () => {
+      const password = window.prompt("Enter admin password to clear the leaderboard:");
+      if (password == null) return; // user cancelled
+      if (!password) {
+        setStatus("password required", "err");
+        return;
+      }
+      if (!window.confirm("This will permanently delete ALL standings. Continue?")) return;
+      try {
+        const res = await fetch(`${BACKEND_URL}/reset`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password }),
+        });
+        if (res.status === 401) {
+          setStatus("wrong password", "err");
+          return;
+        }
+        if (!res.ok) {
+          setStatus(`reset failed (${res.status})`, "err");
+          return;
+        }
+        setStatus("standings cleared", "ok");
+        fetchStandings();
+      } catch (e) {
+        setStatus(`network error — is the backend running?`, "err");
       }
     });
 
