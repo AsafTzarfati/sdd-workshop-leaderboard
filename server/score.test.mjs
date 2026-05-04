@@ -34,30 +34,22 @@ const PERFECT = {
     lag_samples: 17,
     gain: 0.3,
   },
-  pattern_5: {
-    label: "ASCII in MAINT",
-    decoded_message: "HELLO COPILOT",
-    carrier_field: "motor_temp_c[3]",
-    active_mode: "MAINT",
-    window_samples: 10,
-    period_s: 30,
-  },
 };
 
 test("perfect submission scores 100", async () => {
   assert.equal(await score(PERFECT), 100);
 });
 
-test("each pattern alone scores 20", async () => {
+test("each pattern alone scores 25", async () => {
   for (const id of Object.keys(PERFECT)) {
     const single = { [id]: PERFECT[id] };
-    assert.equal(await score(single), 20, `expected 20 for ${id}`);
+    assert.equal(await score(single), 25, `expected 25 for ${id}`);
   }
 });
 
-test("missing pattern → 80", async () => {
-  const { pattern_5, ...rest } = PERFECT;
-  assert.equal(await score(rest), 80);
+test("missing pattern → 75", async () => {
+  const { pattern_4, ...rest } = PERFECT;
+  assert.equal(await score(rest), 75);
 });
 
 test("malformed answer throws", async () => {
@@ -72,9 +64,9 @@ test("range-criterion boundary: just inside passes, just outside fails", async (
   const outAns = { pattern_4: { ...PERFECT.pattern_4, lag_samples: 15 } };
   const inScore = await score(inAns);
   const outScore = await score(outAns);
-  assert.equal(inScore, 20, "lag=16 should be full credit");
-  assert.ok(outScore < 20, "lag=15 should drop the lag criterion");
-  assert.ok(outScore >= 12, "remaining criteria should still earn credit");
+  assert.equal(inScore, 25, "lag=16 should be full credit");
+  assert.ok(outScore < 25, "lag=15 should drop the lag criterion");
+  assert.ok(outScore >= 15, "remaining criteria should still earn credit");
 });
 
 test("cross-agent fairness: synonym labels score identically", async () => {
@@ -89,7 +81,7 @@ test("cross-agent fairness: synonym labels score identically", async () => {
   const scores = await Promise.all(
     variants.map((label) => score({ pattern_1: { ...PERFECT.pattern_1, label } }))
   );
-  for (const s of scores) assert.equal(s, 20, `synonym mismatch: ${scores.join(",")}`);
+  for (const s of scores) assert.equal(s, 25, `synonym mismatch: ${scores.join(",")}`);
 });
 
 test("label miss with no LLM configured: structural credit retained", async () => {
@@ -99,11 +91,11 @@ test("label miss with no LLM configured: structural credit retained", async () =
   const ans = { pattern_1: { ...PERFECT.pattern_1, label: "the blue and white banner" } };
   const s = await score(ans);
   // Pattern 1 has 5 criteria of weight 4 each (total 20). Missing the label
-  // criterion costs 4/20 of 20 points = 4. Expect 16.
-  assert.equal(s, 16);
+  // criterion costs 4/20 of 25 points = 5. Expect 20.
+  assert.equal(s, 20);
 });
 
-test("partial credit on Pattern 3: only the label matches → 6/20 ≈ 6", async () => {
+test("partial credit on Pattern 3: only the label matches → 6/20 of 25", async () => {
   const ans = {
     pattern_3: {
       label: "Fibonacci",
@@ -112,8 +104,8 @@ test("partial credit on Pattern 3: only the label matches → 6/20 ≈ 6", async
     },
   };
   const s = await score(ans);
-  // Pattern 3 weights: intervals=7, seqs=7, label=6. Only label hits → 6/20*20 = 6.
-  assert.equal(s, 6);
+  // Pattern 3 weights: intervals=7, seqs=7, label=6. Only label hits → 6/20*25 = 7.5 → 8.
+  assert.equal(s, 8);
 });
 
 test("cache is populated by LLM verdict and reused on second call", async () => {
@@ -124,28 +116,21 @@ test("cache is populated by LLM verdict and reused on second call", async () => 
   const cache = { "pattern_1::the blue and white banner": 1 };
   const ans = { pattern_1: { ...PERFECT.pattern_1, label: "the blue and white banner" } };
   const s = await score(ans, { cache });
-  assert.equal(s, 20, "cached YES verdict should grant full label credit");
+  assert.equal(s, 25, "cached YES verdict should grant full label credit");
 });
 
 test("hexagram component check is case-insensitive and substring-tolerant", async () => {
   const ans = {
     pattern_1: { ...PERFECT.pattern_1, components: ["STRIPES", "Star (Hexagram)"] },
   };
-  assert.equal(await score(ans), 20);
-});
-
-test("Pattern 5 message is normalized — extra whitespace and case ignored", async () => {
-  const ans = {
-    pattern_5: { ...PERFECT.pattern_5, decoded_message: "  hello   copilot  " },
-  };
-  assert.equal(await score(ans), 20);
+  assert.equal(await score(ans), 25);
 });
 
 test("scoreWithBreakdown returns total + per-pattern map", async () => {
   const { total, breakdown } = await scoreWithBreakdown(PERFECT);
   assert.equal(total, 100);
   assert.deepEqual(breakdown, {
-    pattern_1: 20, pattern_2: 20, pattern_3: 20, pattern_4: 20, pattern_5: 20,
+    pattern_1: 25, pattern_2: 25, pattern_3: 25, pattern_4: 25,
   });
 });
 
@@ -160,8 +145,8 @@ test("breakdown reflects partial credit and zero for unsubmitted", async () => {
     },
   };
   const { total, breakdown } = await scoreWithBreakdown(ans);
-  assert.equal(total, 6);
-  assert.equal(breakdown.pattern_3, 6);
+  assert.equal(total, 8);
+  assert.equal(breakdown.pattern_3, 8);
   assert.equal(breakdown.pattern_1, 0);
-  assert.equal(breakdown.pattern_5, 0);
+  assert.equal(breakdown.pattern_4, 0);
 });

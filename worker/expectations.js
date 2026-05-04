@@ -1,7 +1,7 @@
-// Expected values, tolerance bands, and label aliases for the 5 hidden patterns.
+// Expected values, tolerance bands, and label aliases for the 4 hidden patterns.
 // Mirror of server/expectations.mjs — keep both in sync.
 
-export const PATTERN_POINTS = 20;
+export const PATTERN_POINTS = 25; // 4 patterns × 25 = 100
 
 export const EXPECTATIONS = {
   pattern_1: {
@@ -65,21 +65,6 @@ export const EXPECTATIONS = {
     ],
   },
 
-  pattern_5: {
-    description: "A short ASCII message — 'HELLO COPILOT' — hidden inside the motor[3] temperature channel during MAINT-mode windows: 10 samples per character, one 30-second period between windows.",
-    criteria: [
-      { id: "message", weight: 8, kind: "normalized_string", field: "decoded_message", expected: "HELLO COPILOT" },
-      { id: "carrier", weight: 3, kind: "exact_string", field: "carrier_field", expected: "motor_temp_c[3]" },
-      { id: "mode", weight: 3, kind: "exact_string_ci", field: "active_mode", expected: "MAINT" },
-      { id: "period", weight: 3, kind: "range", field: "period_s", min: 25, max: 35 },
-      { id: "label", weight: 3, kind: "label" },
-    ],
-    aliases: [
-      "ascii in maint", "hidden message", "covert channel",
-      "ascii encoding", "encoded message", "secret message",
-      "steganography", "hidden ascii",
-    ],
-  },
 };
 
 export function normalizeLabel(s) {

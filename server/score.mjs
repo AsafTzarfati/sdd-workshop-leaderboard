@@ -2,7 +2,7 @@
 //
 // Input:  the parsed `answer` object from a submission, conforming to
 //         ssd-speckit-workshop/specs/submission_schema.json.
-// Output: integer 0..100. Each of 5 patterns is worth 20 points; criteria
+// Output: integer 0..100. Each of 4 patterns is worth 25 points; criteria
 //         within a pattern split that 20 by `weight`.
 //
 // Throws if `answer` is not a JSON object.

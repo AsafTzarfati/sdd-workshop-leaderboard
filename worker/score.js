@@ -1,6 +1,6 @@
 // Scoring rule for the workshop (Cloudflare Workers build).
 // Mirror of server/score.mjs — keep both in sync.
-// 5 patterns × 20 points = 100. Criteria within a pattern split that 20 by weight.
+// 4 patterns × 25 points = 100. Criteria within a pattern split that 25 by weight.
 // Throws if `answer` is not a JSON object.
 
 import { EXPECTATIONS, PATTERN_POINTS, normalizeLabel } from "./expectations.js";

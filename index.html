@@ -259,11 +259,11 @@
 
     function renderBreakdown(b) {
       if (!b || typeof b !== "object") return "";
-      const ids = ["pattern_1", "pattern_2", "pattern_3", "pattern_4", "pattern_5"];
+      const ids = ["pattern_1", "pattern_2", "pattern_3", "pattern_4"];
       const cells = ids.map((id, i) => {
         const pts = Number(b[id] ?? 0);
-        const cls = pts < 20 ? "cell lost" : "cell";
-        return `<span class="${cls}" title="${id}">P${i + 1} ${pts}/20</span>`;
+        const cls = pts < 25 ? "cell lost" : "cell";
+        return `<span class="${cls}" title="${id}">P${i + 1} ${pts}/25</span>`;
       }).join("");
       return `<div class="breakdown-row" role="row" aria-label="per-pattern breakdown">${cells}</div>`;
     }
