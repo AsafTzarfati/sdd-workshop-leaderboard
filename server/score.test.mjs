@@ -142,6 +142,35 @@ test("Pattern 4 source/target accept both bare and dotted-path field names", asy
   assert.equal(await score(dotted), 25);
 });
 
+test("verbose descriptive labels containing an alias earn label credit (no LLM)", async () => {
+  // A real-world detector tends to emit a descriptive sentence rather than a
+  // bare alias. The judge must accept those via substring containment so
+  // grading does not depend on whether the LLM tier is configured.
+  delete process.env.LLM_JUDGE_URL;
+  delete process.env.LLM_JUDGE_TOKEN;
+
+  const verboseP4 = {
+    pattern_4: {
+      ...PERFECT.pattern_4,
+      label: "motor_temp_c[0] is a lagged echo of current_a (lag=17, gain=0.3073)",
+    },
+  };
+  assert.equal(await score(verboseP4), 25, "P4 verbose label should earn credit via 'lagged echo'");
+
+  const verboseP2 = {
+    pattern_2: { ...PERFECT.pattern_2, label: "Apollo 11 lunar descent" },
+  };
+  assert.equal(await score(verboseP2), 25, "P2 'Apollo 11 lunar descent' should earn credit via 'apollo 11'");
+});
+
+test("non-matching label still misses without LLM (no false positives)", async () => {
+  delete process.env.LLM_JUDGE_URL;
+  delete process.env.LLM_JUDGE_TOKEN;
+  // No alias is a substring of this string — should still drop the label criterion.
+  const ans = { pattern_1: { ...PERFECT.pattern_1, label: "the blue and white banner" } };
+  assert.equal(await score(ans), 20);
+});
+
 test("scoreWithBreakdown returns total + per-pattern map", async () => {
   const { total, breakdown } = await scoreWithBreakdown(PERFECT);
   assert.equal(total, 100);
