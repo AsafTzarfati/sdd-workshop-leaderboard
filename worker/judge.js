@@ -11,7 +11,10 @@ export async function judgeLabel(patternId, rawLabel, cache, env) {
   if (!norm) return { credit: 0, source: "miss" };
 
   const aliases = EXPECTATIONS[patternId]?.aliases ?? [];
-  if (aliases.includes(norm)) return { credit: 1, source: "alias" };
+  // Substring containment on the normalized label so descriptive labels like
+  // "motor_temp_c[0] is a lagged echo of current_a (lag=17, gain=0.3073)"
+  // match the "lagged echo" alias without needing the LLM tier.
+  if (aliases.some((a) => norm.includes(a))) return { credit: 1, source: "alias" };
 
   const key = `${patternId}::${norm}`;
   if (cache && Object.prototype.hasOwnProperty.call(cache, key)) {
